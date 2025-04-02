@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { Geist, Geist_Mono } from "next/font/google";
 
@@ -13,17 +13,14 @@ const geistMono = Geist_Mono({
 });
 
 export default function Dashboard() {
-  // User authentication state
   const [user, setUser] = useState({
-    isLoggedIn: true, // For demo purposes
+    isLoggedIn: true,
     type: "contractor", // contractor or tradesman
     name: "John Doe",
   });
 
-  // State for the active tab/section
   const [activeTab, setActiveTab] = useState("fairPrice");
 
-  // Navbar links with their associated components
   const navLinks = [
     { id: "fairPrice", name: "Fair Price Calculator", icon: "📊" },
     { id: "marketRates", name: "Market Rates", icon: "💹" },
@@ -32,7 +29,6 @@ export default function Dashboard() {
     { id: "benchmarkReport", name: "Benchmark Report", icon: "📈" },
   ];
 
-  // Render the appropriate component based on the active tab
   const renderActiveComponent = () => {
     switch (activeTab) {
       case "fairPrice":
@@ -51,50 +47,33 @@ export default function Dashboard() {
   };
 
   return (
-    <div
-      className={`min-h-screen flex flex-col bg-gray-50 ${geistSans.variable} ${geistMono.variable}`}
-    >
+    <div className={`min-h-screen flex flex-col bg-gray-50 ${geistSans.variable} ${geistMono.variable}`}>
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <Image
-              src="/next.svg" // Replace with your logo
+              src="/next.svg"
               alt="Construction Price Analyzer"
               width={100}
               height={24}
               priority
             />
-            <h1 className="text-xl font-bold text-gray-800 hidden sm:block">
-              Construction Price Analyzer
-            </h1>
+            <h1 className="text-xl font-bold text-gray-800 hidden sm:block">Construction Price Analyzer</h1>
           </div>
-
           <div className="flex items-center space-x-4">
             {user.isLoggedIn ? (
               <>
-                <span className="text-sm text-gray-600">
-                  Welcome, {user.name}
-                </span>
+                <span className="text-sm text-gray-600">Welcome, {user.name}</span>
                 <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded capitalize">
                   {user.type}
                 </span>
-                <button className="text-sm text-gray-600 hover:text-gray-900">
-                  Logout
-                </button>
+                <button className="text-sm text-gray-600 hover:text-gray-900">Logout</button>
               </>
             ) : (
               <>
-                <a
-                  href="/login"
-                  className="text-sm text-gray-600 hover:text-gray-900"
-                >
-                  Login
-                </a>
-                <a
-                  href="/register"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                >
+                <a href="/login" className="text-sm text-gray-600 hover:text-gray-900">Login</a>
+                <a href="/register" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
                   Register
                 </a>
               </>
@@ -129,7 +108,9 @@ export default function Dashboard() {
         </aside>
 
         {/* Main content */}
-        <main className="flex-grow p-4 md:p-8">{renderActiveComponent()}</main>
+        <main className="flex-grow p-4 md:p-8">
+          {renderActiveComponent()}
+        </main>
       </div>
 
       {/* Footer */}
@@ -152,7 +133,6 @@ function FairPriceCalculator({ userType }) {
     material_quality_score: 5,
     user_type: userType,
   });
-
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -190,37 +170,18 @@ function FairPriceCalculator({ userType }) {
     });
   };
 
-  const handleSliderChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: Number(value),
-    });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/predict-fair-price",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
-
+      const response = await fetch("http://localhost:5000/api/predict-fair-price", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to get fair price prediction");
-      }
-
+      if (!response.ok) throw new Error(data.error || "Failed to predict fair price");
       setPrediction(data.predicted_fair_price);
     } catch (err) {
       setError(err.message);
@@ -236,9 +197,7 @@ function FairPriceCalculator({ userType }) {
         <div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Service Category
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Service Category</label>
               <select
                 name="category"
                 value={formData.category}
@@ -254,11 +213,8 @@ function FairPriceCalculator({ userType }) {
                 ))}
               </select>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Location
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
               <select
                 name="location"
                 value={formData.location}
@@ -274,11 +230,8 @@ function FairPriceCalculator({ userType }) {
                 ))}
               </select>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Area (square meters)
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Area (square meters)</label>
               <input
                 type="number"
                 name="area_sqm"
@@ -289,45 +242,6 @@ function FairPriceCalculator({ userType }) {
                 required
               />
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Complexity Score: {formData.complexity_score}
-              </label>
-              <input
-                type="range"
-                name="complexity_score"
-                min="1"
-                max="10"
-                value={formData.complexity_score}
-                onChange={handleSliderChange}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>Simple</span>
-                <span>Complex</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Material Quality: {formData.material_quality_score}
-              </label>
-              <input
-                type="range"
-                name="material_quality_score"
-                min="1"
-                max="10"
-                value={formData.material_quality_score}
-                onChange={handleSliderChange}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>Basic</span>
-                <span>Premium</span>
-              </div>
-            </div>
-
             <button
               type="submit"
               disabled={loading}
@@ -337,39 +251,28 @@ function FairPriceCalculator({ userType }) {
             </button>
           </form>
         </div>
-
         <div className="bg-gray-50 p-6 rounded-lg">
           <h3 className="text-lg font-semibold mb-4">Price Prediction</h3>
           {error && (
-            <div className="p-4 bg-red-50 text-red-700 rounded-md mb-4">
-              {error}
-            </div>
+            <div className="p-4 bg-red-50 text-red-700 rounded-md mb-4">{error}</div>
           )}
-
           {prediction !== null ? (
             <div className="text-center py-8">
               <p className="text-gray-600 mb-2">Estimated Fair Price:</p>
-              <p className="text-4xl font-bold text-blue-700">
-                ${prediction.toLocaleString()}
-              </p>
+              <p className="text-4xl font-bold text-blue-700">${prediction.toLocaleString()}</p>
               <div className="mt-6 text-sm text-gray-600">
                 <p className="mb-2">This estimate is based on:</p>
                 <ul className="list-disc pl-5 space-y-1">
                   <li>{formData.area_sqm} square meters</li>
                   <li>Complexity level: {formData.complexity_score}/10</li>
-                  <li>
-                    Material quality: {formData.material_quality_score}/10
-                  </li>
+                  <li>Material quality: {formData.material_quality_score}/10</li>
                   <li>Location: {formData.location}</li>
                 </ul>
               </div>
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500">
-              <p>
-                Fill out the form and click "Calculate Fair Price" to get a
-                price prediction.
-              </p>
+              <p>Fill out the form and click "Calculate Fair Price" to get a price prediction.</p>
             </div>
           )}
         </div>
@@ -385,7 +288,6 @@ function MarketRatesAnalyzer({ userType }) {
     location: "",
     user_type: userType,
   });
-
   const [marketData, setMarketData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -427,25 +329,14 @@ function MarketRatesAnalyzer({ userType }) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/get-market-rates",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
-
+      const response = await fetch("http://localhost:5000/api/get-market-rates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to get market rates");
-      }
-
+      if (!response.ok) throw new Error(data.error || "Failed to get market rates");
       setMarketData(data);
     } catch (err) {
       setError(err.message);
@@ -457,13 +348,10 @@ function MarketRatesAnalyzer({ userType }) {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h2 className="text-2xl font-bold mb-6">Market Rates Analysis</h2>
-
       <form onSubmit={handleSubmit} className="mb-6 max-w-lg">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Service Category
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Service Category</label>
             <select
               name="category"
               value={formData.category}
@@ -479,11 +367,8 @@ function MarketRatesAnalyzer({ userType }) {
               ))}
             </select>
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Location
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
             <select
               name="location"
               value={formData.location}
@@ -500,7 +385,6 @@ function MarketRatesAnalyzer({ userType }) {
             </select>
           </div>
         </div>
-
         <button
           type="submit"
           disabled={loading}
@@ -509,60 +393,42 @@ function MarketRatesAnalyzer({ userType }) {
           {loading ? "Loading..." : "Get Market Rates"}
         </button>
       </form>
-
       {error && (
-        <div className="p-4 bg-red-50 text-red-700 rounded-md mb-4">
-          {error}
-        </div>
+        <div className="p-4 bg-red-50 text-red-700 rounded-md mb-4">{error}</div>
       )}
-
       {marketData && (
         <div className="bg-gray-50 p-6 rounded-lg">
           <h3 className="text-lg font-semibold mb-4">
             {formData.category} Market Rates in {formData.location}
           </h3>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white p-4 rounded-lg border border-gray-200">
               <p className="text-sm text-gray-500 mb-1">Average Rate</p>
-              <p className="text-2xl font-bold text-blue-700">
-                ${marketData.average_rate.toLocaleString()}
-              </p>
+              <p className="text-2xl font-bold text-blue-700">${marketData.average_rate.toLocaleString()}</p>
             </div>
-
             <div className="bg-white p-4 rounded-lg border border-gray-200">
               <p className="text-sm text-gray-500 mb-1">Minimum Rate</p>
-              <p className="text-2xl font-bold text-green-700">
-                ${marketData.min_rate.toLocaleString()}
-              </p>
+              <p className="text-2xl font-bold text-green-700">${marketData.min_rate.toLocaleString()}</p>
             </div>
-
             <div className="bg-white p-4 rounded-lg border border-gray-200">
               <p className="text-sm text-gray-500 mb-1">Maximum Rate</p>
-              <p className="text-2xl font-bold text-red-700">
-                ${marketData.max_rate.toLocaleString()}
-              </p>
+              <p className="text-2xl font-bold text-red-700">${marketData.max_rate.toLocaleString()}</p>
             </div>
           </div>
-
           <div className="mt-6">
             <h4 className="text-md font-medium mb-3">Recent Market Trends</h4>
             <div className="bg-white p-4 rounded-lg border border-gray-200">
               <p className="mb-2">
-                <span className="font-medium">Rate Volatility:</span>{" "}
-                {marketData.volatility}%
+                <span className="font-medium">Rate Volatility:</span> {marketData.volatility}%
               </p>
               <p className="mb-2">
-                <span className="font-medium">Annual Growth Rate:</span>{" "}
-                {marketData.growth_rate}%
+                <span className="font-medium">Annual Growth Rate:</span> {marketData.growth_rate}%
               </p>
               <p className="mb-2">
-                <span className="font-medium">Demand Level:</span>{" "}
-                {marketData.demand_level}
+                <span className="font-medium">Demand Level:</span> {marketData.demand_level}
               </p>
               <p className="mb-2">
-                <span className="font-medium">Supply Level:</span>{" "}
-                {marketData.supply_level}
+                <span className="font-medium">Supply Level:</span> {marketData.supply_level}
               </p>
             </div>
           </div>
@@ -572,7 +438,7 @@ function MarketRatesAnalyzer({ userType }) {
   );
 }
 
-// More components for other tabs
+// Dispute Resolver Component
 function DisputeResolver({ userType }) {
   const [formData, setFormData] = useState({
     category: "",
@@ -584,7 +450,6 @@ function DisputeResolver({ userType }) {
     client_expectation: "",
     user_type: userType,
   });
-
   const [disputeResult, setDisputeResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -618,19 +483,9 @@ function DisputeResolver({ userType }) {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: ["area_sqm", "contractor_price", "client_expectation"].includes(
-        name
-      )
+      [name]: ["area_sqm", "contractor_price", "client_expectation"].includes(name)
         ? Number(value)
         : value,
-    });
-  };
-
-  const handleSliderChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: Number(value),
     });
   };
 
@@ -638,25 +493,14 @@ function DisputeResolver({ userType }) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/evaluate-dispute",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
-
+      const response = await fetch("http://localhost:5000/api/evaluate-dispute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to evaluate dispute");
-      }
-
+      if (!response.ok) throw new Error(data.error || "Failed to evaluate dispute");
       setDisputeResult(data);
     } catch (err) {
       setError(err.message);
@@ -668,15 +512,12 @@ function DisputeResolver({ userType }) {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h2 className="text-2xl font-bold mb-6">Dispute Resolution Tool</h2>
-
       <div className="grid md:grid-cols-2 gap-6">
         <div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Service Category
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Service Category</label>
                 <select
                   name="category"
                   value={formData.category}
@@ -692,11 +533,8 @@ function DisputeResolver({ userType }) {
                   ))}
                 </select>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Location
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
                 <select
                   name="location"
                   value={formData.location}
@@ -713,11 +551,8 @@ function DisputeResolver({ userType }) {
                 </select>
               </div>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Area (square meters)
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Area (square meters)</label>
               <input
                 type="number"
                 name="area_sqm"
@@ -728,7 +563,6 @@ function DisputeResolver({ userType }) {
                 required
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Complexity Score: {formData.complexity_score}
@@ -739,11 +573,10 @@ function DisputeResolver({ userType }) {
                 min="1"
                 max="10"
                 value={formData.complexity_score}
-                onChange={handleSliderChange}
+                onChange={handleInputChange}
                 className="w-full"
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Material Quality: {formData.material_quality_score}
@@ -754,16 +587,13 @@ function DisputeResolver({ userType }) {
                 min="1"
                 max="10"
                 value={formData.material_quality_score}
-                onChange={handleSliderChange}
+                onChange={handleInputChange}
                 className="w-full"
               />
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contractor Price ($)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contractor Price ($)</label>
                 <input
                   type="number"
                   name="contractor_price"
@@ -774,11 +604,8 @@ function DisputeResolver({ userType }) {
                   required
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Client Expectation ($)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Client Expectation ($)</label>
                 <input
                   type="number"
                   name="client_expectation"
@@ -790,7 +617,6 @@ function DisputeResolver({ userType }) {
                 />
               </div>
             </div>
-
             <button
               type="submit"
               disabled={loading}
@@ -800,16 +626,11 @@ function DisputeResolver({ userType }) {
             </button>
           </form>
         </div>
-
         <div className="bg-gray-50 p-6 rounded-lg">
           <h3 className="text-lg font-semibold mb-4">Dispute Evaluation</h3>
-
           {error && (
-            <div className="p-4 bg-red-50 text-red-700 rounded-md mb-4">
-              {error}
-            </div>
+            <div className="p-4 bg-red-50 text-red-700 rounded-md mb-4">{error}</div>
           )}
-
           {disputeResult ? (
             <div>
               <div
@@ -821,27 +642,20 @@ function DisputeResolver({ userType }) {
                     : "bg-red-50 text-red-700"
                 }`}
               >
-                <p className="font-medium">
-                  Assessment: {disputeResult.fairness_assessment}
-                </p>
+                <p className="font-medium">Assessment: {disputeResult.fairness_assessment}</p>
               </div>
-
               <div className="mb-4">
                 <p className="font-medium mb-2">Price Analysis:</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-white p-3 rounded-md border border-gray-200">
                     <p className="text-sm text-gray-500">Fair Price</p>
-                    <p className="text-xl font-bold text-blue-700">
-                      ${disputeResult.fair_price}
-                    </p>
+                    <p className="text-xl font-bold text-blue-700">${disputeResult.fair_price}</p>
                   </div>
                   <div className="bg-white p-3 rounded-md border border-gray-200">
                     <p className="text-sm text-gray-500">Deviation</p>
                     <p
                       className={`text-xl font-bold ${
-                        disputeResult.price_deviation > 10
-                          ? "text-red-700"
-                          : "text-green-700"
+                        disputeResult.price_deviation > 10 ? "text-red-700" : "text-green-700"
                       }`}
                     >
                       {disputeResult.price_deviation}%
@@ -849,12 +663,10 @@ function DisputeResolver({ userType }) {
                   </div>
                 </div>
               </div>
-
               <div className="bg-white p-4 rounded-md border border-gray-200 mb-4">
                 <p className="font-medium mb-2">Recommendation:</p>
                 <p>{disputeResult.recommendation}</p>
               </div>
-
               <div className="bg-white p-4 rounded-md border border-gray-200">
                 <p className="font-medium mb-2">Market Context:</p>
                 <p>{disputeResult.market_context}</p>
@@ -862,10 +674,7 @@ function DisputeResolver({ userType }) {
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500">
-              <p>
-                Fill out the form and click "Evaluate Dispute" to get an
-                analysis.
-              </p>
+              <p>Fill out the form and click "Evaluate Dispute" to get an analysis.</p>
             </div>
           )}
         </div>
@@ -874,6 +683,7 @@ function DisputeResolver({ userType }) {
   );
 }
 
+// Regional Analysis Component
 function RegionalAnalysis({ userType }) {
   const [formData, setFormData] = useState({
     category: "",
@@ -906,33 +716,18 @@ function RegionalAnalysis({ userType }) {
     });
   };
 
-  const handleSliderChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: Number(value),
-    });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/analyze-regional-pricing",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const response = await fetch("http://localhost:5000/api/analyze-regional-pricing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to get regional analysis");
-      }
+      if (!response.ok) throw new Error(data.error || "Failed to analyze regional pricing");
       setRegionalData(data);
     } catch (err) {
       setError(err.message);
@@ -948,9 +743,7 @@ function RegionalAnalysis({ userType }) {
         <div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Service Category
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Service Category</label>
               <select
                 name="category"
                 value={formData.category}
@@ -967,9 +760,7 @@ function RegionalAnalysis({ userType }) {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Area (square meters)
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Area (square meters)</label>
               <input
                 type="number"
                 name="area_sqm"
@@ -990,7 +781,7 @@ function RegionalAnalysis({ userType }) {
                 min="1"
                 max="10"
                 value={formData.complexity_score}
-                onChange={handleSliderChange}
+                onChange={handleInputChange}
                 className="w-full"
               />
             </div>
@@ -1004,7 +795,7 @@ function RegionalAnalysis({ userType }) {
                 min="1"
                 max="10"
                 value={formData.material_quality_score}
-                onChange={handleSliderChange}
+                onChange={handleInputChange}
                 className="w-full"
               />
             </div>
@@ -1018,34 +809,24 @@ function RegionalAnalysis({ userType }) {
           </form>
         </div>
         <div className="bg-gray-50 p-6 rounded-lg">
-          <h3 className="text-lg font-semibold mb-4">
-            Regional Pricing Results
-          </h3>
+          <h3 className="text-lg font-semibold mb-4">Regional Pricing Results</h3>
           {error && (
-            <div className="p-4 bg-red-50 text-red-700 rounded-md mb-4">
-              {error}
-            </div>
+            <div className="p-4 bg-red-50 text-red-700 rounded-md mb-4">{error}</div>
           )}
           {regionalData ? (
             <div>
               <div className="mb-4">
-                <p className="font-medium mb-2">
-                  Average Price Across Regions:
-                </p>
-                <p className="text-2xl font-bold text-blue-700">
-                  ${regionalData.average_price}
-                </p>
+                <p className="font-medium mb-2">Average Price Across Regions:</p>
+                <p className="text-2xl font-bold text-blue-700">${regionalData.average_price}</p>
               </div>
               <div className="mb-4">
                 <p className="font-medium mb-2">Price Variations:</p>
                 <ul className="list-disc pl-5 space-y-1">
-                  {Object.entries(regionalData.price_variations).map(
-                    ([region, price]) => (
-                      <li key={region}>
-                        {region}: ${price.toFixed(2)}
-                      </li>
-                    )
-                  )}
+                  {Object.entries(regionalData.price_variations).map(([region, price]) => (
+                    <li key={region}>
+                      {region}: ${price.toFixed(2)}
+                    </li>
+                  ))}
                 </ul>
               </div>
               <div className="bg-white p-4 rounded-md border border-gray-200">
@@ -1055,10 +836,7 @@ function RegionalAnalysis({ userType }) {
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500">
-              <p>
-                Fill out the form and click "Analyze Regional Pricing" to get
-                results.
-              </p>
+              <p>Fill out the form and click "Analyze Regional Pricing" to get results.</p>
             </div>
           )}
         </div>
@@ -1067,6 +845,7 @@ function RegionalAnalysis({ userType }) {
   );
 }
 
+// Benchmark Report Component
 function BenchmarkReport({ userType }) {
   const [formData, setFormData] = useState({
     categories: [],
@@ -1114,20 +893,13 @@ function BenchmarkReport({ userType }) {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/generate-benchmark-report",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const response = await fetch("http://localhost:5000/api/generate-benchmark-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to generate benchmark report");
-      }
+      if (!response.ok) throw new Error(data.error || "Failed to generate benchmark report");
       setReportData(data);
     } catch (err) {
       setError(err.message);
@@ -1143,9 +915,7 @@ function BenchmarkReport({ userType }) {
         <div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Select Categories
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Select Categories</label>
               <div className="flex flex-wrap gap-2">
                 {categories.map((category) => (
                   <label key={category} className="inline-flex items-center">
@@ -1162,9 +932,7 @@ function BenchmarkReport({ userType }) {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Area (square meters)
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Area (square meters)</label>
               <input
                 type="number"
                 name="area_sqm"
@@ -1184,13 +952,9 @@ function BenchmarkReport({ userType }) {
           </form>
         </div>
         <div className="bg-gray-50 p-6 rounded-lg">
-          <h3 className="text-lg font-semibold mb-4">
-            Benchmark Pricing Results
-          </h3>
+          <h3 className="text-lg font-semibold mb-4">Benchmark Pricing Results</h3>
           {error && (
-            <div className="p-4 bg-red-50 text-red-700 rounded-md mb-4">
-              {error}
-            </div>
+            <div className="p-4 bg-red-50 text-red-700 rounded-md mb-4">{error}</div>
           )}
           {reportData ? (
             <div>
@@ -1207,10 +971,7 @@ function BenchmarkReport({ userType }) {
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500">
-              <p>
-                Select categories and click "Generate Benchmark Report" to get
-                results.
-              </p>
+              <p>Select categories and click "Generate Benchmark Report" to view results.</p>
             </div>
           )}
         </div>
