@@ -59,13 +59,13 @@ export default function Dashboard() {
       fetchJobs();
     }
   }, [user.type]);
-  
+
   const fetchJobs = async () => {
     try {
       const response = await fetch("http://localhost:5000/api/jobs");
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to fetch jobs");
-      setJobs(data.jobs);
+      setJobs(data);
     } catch (err) {
       console.error(err.message);
     }
@@ -257,13 +257,27 @@ function CreateJobForm() {
     setLoading(true);
     setError(null);
 
+    // Define required fields
+    const required_fields = [
+      "title",
+      "category",
+      "location",
+      "description",
+      "area_sqm",
+      "complexity_score",
+      "material_quality_score",
+      "budget",
+      "deadline",
+      "contractor_id",
+    ];
+
     // Validate required fields
-    // const missingFields = required_fields.filter((field) => !formData[field]);
-    // if (missingFields.length > 0) {
-    //   setError(`The following fields are required: ${missingFields.join(", ")}`);
-    //   setLoading(false);
-    //   return;
-    // }
+    const missingFields = required_fields.filter((field) => !formData[field]);
+    if (missingFields.length > 0) {
+      setError(`The following fields are required: ${missingFields.join(", ")}`);
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch("http://localhost:5000/api/create-job", {
@@ -309,7 +323,6 @@ function CreateJobForm() {
             required
           />
         </div>
-
         {/* Category */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
@@ -332,7 +345,6 @@ function CreateJobForm() {
             <option value="Landscaping">Landscaping</option>
           </select>
         </div>
-
         {/* Location */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
@@ -345,7 +357,6 @@ function CreateJobForm() {
             required
           />
         </div>
-
         {/* Description */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
@@ -358,7 +369,6 @@ function CreateJobForm() {
             required
           ></textarea>
         </div>
-
         {/* Area (square meters) */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Area (square meters)</label>
@@ -372,7 +382,6 @@ function CreateJobForm() {
             required
           />
         </div>
-
         {/* Complexity Score */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -388,7 +397,6 @@ function CreateJobForm() {
             className="w-full"
           />
         </div>
-
         {/* Material Quality Score */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -404,7 +412,6 @@ function CreateJobForm() {
             className="w-full"
           />
         </div>
-
         {/* Budget */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Budget ($)</label>
@@ -418,7 +425,6 @@ function CreateJobForm() {
             required
           />
         </div>
-
         {/* Deadline */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
@@ -431,10 +437,8 @@ function CreateJobForm() {
             required
           />
         </div>
-
         {/* Contractor ID (hidden or pre-filled) */}
         <input type="hidden" name="contractor_id" value={formData.contractor_id} />
-
         {/* Submit Button */}
         <button
           type="submit"
@@ -444,7 +448,6 @@ function CreateJobForm() {
           {loading ? "Creating..." : "Create Job"}
         </button>
       </form>
-
       {/* Error Message */}
       {error && (
         <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-md">{error}</div>
