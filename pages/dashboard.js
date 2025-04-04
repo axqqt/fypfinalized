@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Geist, Geist_Mono } from "next/font/google";
 
@@ -6,7 +6,6 @@ const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
-
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
@@ -18,15 +17,15 @@ export default function Dashboard() {
     type: "contractor", // contractor or tradesman
     name: "John Doe",
   });
-
   const [activeTab, setActiveTab] = useState("fairPrice");
-
+  const [jobs, setJobs] = useState([]); // List of jobs visible to tradesmen
   const navLinks = [
     { id: "fairPrice", name: "Fair Price Calculator", icon: "📊" },
     { id: "marketRates", name: "Market Rates", icon: "💹" },
     { id: "disputeResolution", name: "Dispute Resolution", icon: "⚖️" },
     { id: "regionalAnalysis", name: "Regional Analysis", icon: "🗺️" },
     { id: "benchmarkReport", name: "Benchmark Report", icon: "📈" },
+    { id: "createJob", name: "Create Job", icon: "📋" }, // New tab for job creation
   ];
 
   const renderActiveComponent = () => {
@@ -41,13 +40,41 @@ export default function Dashboard() {
         return <RegionalAnalysis userType={user.type} />;
       case "benchmarkReport":
         return <BenchmarkReport userType={user.type} />;
+      case "createJob":
+        return user.type === "contractor" ? (
+          <CreateJobForm />
+        ) : (
+          <p className="text-gray-600 text-center">
+            Only contractors can create jobs.
+          </p>
+        );
       default:
         return <FairPriceCalculator userType={user.type} />;
     }
   };
 
+  // Fetch jobs for tradesmen
+  useEffect(() => {
+    if (user.type === "tradesman") {
+      fetchJobs();
+    }
+  }, [user.type]);
+  
+  const fetchJobs = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/jobs");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to fetch jobs");
+      setJobs(data.jobs);
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
+
   return (
-    <div className={`min-h-screen flex flex-col bg-gray-50 ${geistSans.variable} ${geistMono.variable}`}>
+    <div
+      className={`min-h-screen flex flex-col bg-gray-50 ${geistSans.variable} ${geistMono.variable}`}
+    >
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
@@ -59,21 +86,35 @@ export default function Dashboard() {
               height={24}
               priority
             />
-            <h1 className="text-xl font-bold text-gray-800 hidden sm:block">Construction Price Analyzer</h1>
+            <h1 className="text-xl font-bold text-gray-800 hidden sm:block">
+              Construction Price Analyzer
+            </h1>
           </div>
           <div className="flex items-center space-x-4">
             {user.isLoggedIn ? (
               <>
-                <span className="text-sm text-gray-600">Welcome, {user.name}</span>
+                <span className="text-sm text-gray-600">
+                  Welcome, {user.name}
+                </span>
                 <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded capitalize">
                   {user.type}
                 </span>
-                <button className="text-sm text-gray-600 hover:text-gray-900">Logout</button>
+                <button className="text-sm text-gray-600 hover:text-gray-900">
+                  Logout
+                </button>
               </>
             ) : (
               <>
-                <a href="/login" className="text-sm text-gray-600 hover:text-gray-900">Login</a>
-                <a href="/register" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                <a
+                  href="/login"
+                  className="text-sm text-gray-600 hover:text-gray-900"
+                >
+                  Login
+                </a>
+                <a
+                  href="/register"
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                >
                   Register
                 </a>
               </>
@@ -81,7 +122,6 @@ export default function Dashboard() {
           </div>
         </div>
       </header>
-
       {/* Main Content Area */}
       <div className="flex flex-col md:flex-row flex-grow">
         {/* Sidebar Navigation */}
@@ -106,13 +146,12 @@ export default function Dashboard() {
             </ul>
           </nav>
         </aside>
-
         {/* Main content */}
         <main className="flex-grow p-4 md:p-8">
           {renderActiveComponent()}
+          {user.type === "tradesman" && <JobListings jobs={jobs} />}
         </main>
       </div>
-
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-4 text-center text-sm text-gray-600">
         <div className="max-w-7xl mx-auto px-4">
@@ -125,365 +164,89 @@ export default function Dashboard() {
 
 // Fair Price Calculator Component
 function FairPriceCalculator({ userType }) {
-  const [formData, setFormData] = useState({
-    category: "",
-    location: "",
-    area_sqm: "",
-    complexity_score: 5,
-    material_quality_score: 5,
-    user_type: userType,
-  });
-  const [prediction, setPrediction] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const categories = [
-    "Painting",
-    "Flooring",
-    "Roofing",
-    "Electrical",
-    "Plumbing",
-    "Carpentry",
-    "Masonry",
-    "HVAC",
-    "Landscaping",
-  ];
-
-  const locations = [
-    "New York",
-    "Los Angeles",
-    "Chicago",
-    "Houston",
-    "Phoenix",
-    "Philadelphia",
-    "San Antonio",
-    "San Diego",
-    "Dallas",
-    "San Jose",
-  ];
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: name === "area_sqm" ? Number(value) : value,
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch("http://localhost:5000/api/predict-fair-price", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to predict fair price");
-      setPrediction(data.predicted_fair_price);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h2 className="text-2xl font-bold mb-6">Fair Price Calculator</h2>
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Service Category</label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
-                <option value="">Select a category</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-              <select
-                name="location"
-                value={formData.location}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
-                <option value="">Select a location</option>
-                {locations.map((location) => (
-                  <option key={location} value={location}>
-                    {location}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Area (square meters)</label>
-              <input
-                type="number"
-                name="area_sqm"
-                value={formData.area_sqm}
-                onChange={handleInputChange}
-                min="1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "Calculating..." : "Calculate Fair Price"}
-            </button>
-          </form>
-        </div>
-        <div className="bg-gray-50 p-6 rounded-lg">
-          <h3 className="text-lg font-semibold mb-4">Price Prediction</h3>
-          {error && (
-            <div className="p-4 bg-red-50 text-red-700 rounded-md mb-4">{error}</div>
-          )}
-          {prediction !== null ? (
-            <div className="text-center py-8">
-              <p className="text-gray-600 mb-2">Estimated Fair Price:</p>
-              <p className="text-4xl font-bold text-blue-700">${prediction.toLocaleString()}</p>
-              <div className="mt-6 text-sm text-gray-600">
-                <p className="mb-2">This estimate is based on:</p>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>{formData.area_sqm} square meters</li>
-                  <li>Complexity level: {formData.complexity_score}/10</li>
-                  <li>Material quality: {formData.material_quality_score}/10</li>
-                  <li>Location: {formData.location}</li>
-                </ul>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              <p>Fill out the form and click "Calculate Fair Price" to get a price prediction.</p>
-            </div>
-          )}
-        </div>
-      </div>
+      <p className="text-gray-600">
+        This tool helps {userType}s calculate fair prices for construction
+        projects.
+      </p>
     </div>
   );
 }
 
 // Market Rates Analyzer Component
 function MarketRatesAnalyzer({ userType }) {
-  const [formData, setFormData] = useState({
-    category: "",
-    location: "",
-    user_type: userType,
-  });
-  const [marketData, setMarketData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const categories = [
-    "Painting",
-    "Flooring",
-    "Roofing",
-    "Electrical",
-    "Plumbing",
-    "Carpentry",
-    "Masonry",
-    "HVAC",
-    "Landscaping",
-  ];
-
-  const locations = [
-    "New York",
-    "Los Angeles",
-    "Chicago",
-    "Houston",
-    "Phoenix",
-    "Philadelphia",
-    "San Antonio",
-    "San Diego",
-    "Dallas",
-    "San Jose",
-  ];
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch("http://localhost:5000/api/get-market-rates", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to get market rates");
-      setMarketData(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-2xl font-bold mb-6">Market Rates Analysis</h2>
-      <form onSubmit={handleSubmit} className="mb-6 max-w-lg">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Service Category</label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            >
-              <option value="">Select a category</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-            <select
-              name="location"
-              value={formData.location}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            >
-              <option value="">Select a location</option>
-              {locations.map((location) => (
-                <option key={location} value={location}>
-                  {location}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-4 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? "Loading..." : "Get Market Rates"}
-        </button>
-      </form>
-      {error && (
-        <div className="p-4 bg-red-50 text-red-700 rounded-md mb-4">{error}</div>
-      )}
-      {marketData && (
-        <div className="bg-gray-50 p-6 rounded-lg">
-          <h3 className="text-lg font-semibold mb-4">
-            {formData.category} Market Rates in {formData.location}
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white p-4 rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-500 mb-1">Average Rate</p>
-              <p className="text-2xl font-bold text-blue-700">${marketData.average_rate.toLocaleString()}</p>
-            </div>
-            <div className="bg-white p-4 rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-500 mb-1">Minimum Rate</p>
-              <p className="text-2xl font-bold text-green-700">${marketData.min_rate.toLocaleString()}</p>
-            </div>
-            <div className="bg-white p-4 rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-500 mb-1">Maximum Rate</p>
-              <p className="text-2xl font-bold text-red-700">${marketData.max_rate.toLocaleString()}</p>
-            </div>
-          </div>
-          <div className="mt-6">
-            <h4 className="text-md font-medium mb-3">Recent Market Trends</h4>
-            <div className="bg-white p-4 rounded-lg border border-gray-200">
-              <p className="mb-2">
-                <span className="font-medium">Rate Volatility:</span> {marketData.volatility}%
-              </p>
-              <p className="mb-2">
-                <span className="font-medium">Annual Growth Rate:</span> {marketData.growth_rate}%
-              </p>
-              <p className="mb-2">
-                <span className="font-medium">Demand Level:</span> {marketData.demand_level}
-              </p>
-              <p className="mb-2">
-                <span className="font-medium">Supply Level:</span> {marketData.supply_level}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      <h2 className="text-2xl font-bold mb-6">Market Rates Analyzer</h2>
+      <p className="text-gray-600">
+        Analyze current market rates for materials and labor based on your
+        location.
+      </p>
     </div>
   );
 }
 
 // Dispute Resolver Component
 function DisputeResolver({ userType }) {
+  return (
+    <div className="bg-white rounded-lg shadow p-6">
+      <h2 className="text-2xl font-bold mb-6">Dispute Resolution</h2>
+      <p className="text-gray-600">
+        Resolve disputes between contractors and tradesmen efficiently.
+      </p>
+    </div>
+  );
+}
+
+// Regional Analysis Component
+function RegionalAnalysis({ userType }) {
+  return (
+    <div className="bg-white rounded-lg shadow p-6">
+      <h2 className="text-2xl font-bold mb-6">Regional Analysis</h2>
+      <p className="text-gray-600">
+        Get insights into regional trends and pricing for construction projects.
+      </p>
+    </div>
+  );
+}
+
+// Benchmark Report Component
+function BenchmarkReport({ userType }) {
+  return (
+    <div className="bg-white rounded-lg shadow p-6">
+      <h2 className="text-2xl font-bold mb-6">Benchmark Report</h2>
+      <p className="text-gray-600">
+        Generate benchmark reports comparing your project costs with industry
+        standards.
+      </p>
+    </div>
+  );
+}
+
+// Create Job Form Component
+function CreateJobForm() {
   const [formData, setFormData] = useState({
+    title: "",
     category: "",
     location: "",
+    description: "",
     area_sqm: "",
     complexity_score: 5,
     material_quality_score: 5,
-    contractor_price: "",
-    client_expectation: "",
-    user_type: userType,
+    budget: "",
+    deadline: "",
+    contractor_id: "12345", // Example contractor ID (can be dynamically set based on logged-in user)
   });
-  const [disputeResult, setDisputeResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  const categories = [
-    "Painting",
-    "Flooring",
-    "Roofing",
-    "Electrical",
-    "Plumbing",
-    "Carpentry",
-    "Masonry",
-    "HVAC",
-    "Landscaping",
-  ];
-
-  const locations = [
-    "New York",
-    "Los Angeles",
-    "Chicago",
-    "Houston",
-    "Phoenix",
-    "Philadelphia",
-    "San Antonio",
-    "San Diego",
-    "Dallas",
-    "San Jose",
-  ];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: ["area_sqm", "contractor_price", "client_expectation"].includes(name)
+      [name]: ["area_sqm", "budget", "complexity_score", "material_quality_score"].includes(name)
         ? Number(value)
         : value,
     });
@@ -493,15 +256,36 @@ function DisputeResolver({ userType }) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    // Validate required fields
+    // const missingFields = required_fields.filter((field) => !formData[field]);
+    // if (missingFields.length > 0) {
+    //   setError(`The following fields are required: ${missingFields.join(", ")}`);
+    //   setLoading(false);
+    //   return;
+    // }
+
     try {
-      const response = await fetch("http://localhost:5000/api/evaluate-dispute", {
+      const response = await fetch("http://localhost:5000/api/create-job", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to evaluate dispute");
-      setDisputeResult(data);
+      if (!response.ok) throw new Error(data.error || "Failed to create job");
+      alert("Job created successfully!");
+      setFormData({
+        title: "",
+        category: "",
+        location: "",
+        description: "",
+        area_sqm: "",
+        complexity_score: 5,
+        material_quality_score: 5,
+        budget: "",
+        deadline: "",
+        contractor_id: "12345", // Reset contractor ID if needed
+      });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -511,471 +295,189 @@ function DisputeResolver({ userType }) {
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-2xl font-bold mb-6">Dispute Resolution Tool</h2>
-      <div className="grid md:grid-cols-2 gap-6">
+      <h2 className="text-2xl font-bold mb-6">Create a New Job</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Title */}
         <div>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Service Category</label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Select</option>
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                <select
-                  name="location"
-                  value={formData.location}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Select</option>
-                  {locations.map((location) => (
-                    <option key={location} value={location}>
-                      {location}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Area (square meters)</label>
-              <input
-                type="number"
-                name="area_sqm"
-                value={formData.area_sqm}
-                onChange={handleInputChange}
-                min="1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Complexity Score: {formData.complexity_score}
-              </label>
-              <input
-                type="range"
-                name="complexity_score"
-                min="1"
-                max="10"
-                value={formData.complexity_score}
-                onChange={handleInputChange}
-                className="w-full"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Material Quality: {formData.material_quality_score}
-              </label>
-              <input
-                type="range"
-                name="material_quality_score"
-                min="1"
-                max="10"
-                value={formData.material_quality_score}
-                onChange={handleInputChange}
-                className="w-full"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Contractor Price ($)</label>
-                <input
-                  type="number"
-                  name="contractor_price"
-                  value={formData.contractor_price}
-                  onChange={handleInputChange}
-                  min="1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Client Expectation ($)</label>
-                <input
-                  type="number"
-                  name="client_expectation"
-                  value={formData.client_expectation}
-                  onChange={handleInputChange}
-                  min="1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "Evaluating..." : "Evaluate Dispute"}
-            </button>
-          </form>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+          <input
+            type="text"
+            name="title"
+            value={formData.title}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
         </div>
-        <div className="bg-gray-50 p-6 rounded-lg">
-          <h3 className="text-lg font-semibold mb-4">Dispute Evaluation</h3>
-          {error && (
-            <div className="p-4 bg-red-50 text-red-700 rounded-md mb-4">{error}</div>
-          )}
-          {disputeResult ? (
-            <div>
-              <div
-                className={`p-4 rounded-md mb-4 ${
-                  disputeResult.fairness_assessment === "Fair"
-                    ? "bg-green-50 text-green-700"
-                    : disputeResult.fairness_assessment === "Somewhat Fair"
-                    ? "bg-yellow-50 text-yellow-700"
-                    : "bg-red-50 text-red-700"
-                }`}
-              >
-                <p className="font-medium">Assessment: {disputeResult.fairness_assessment}</p>
-              </div>
-              <div className="mb-4">
-                <p className="font-medium mb-2">Price Analysis:</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white p-3 rounded-md border border-gray-200">
-                    <p className="text-sm text-gray-500">Fair Price</p>
-                    <p className="text-xl font-bold text-blue-700">${disputeResult.fair_price}</p>
-                  </div>
-                  <div className="bg-white p-3 rounded-md border border-gray-200">
-                    <p className="text-sm text-gray-500">Deviation</p>
-                    <p
-                      className={`text-xl font-bold ${
-                        disputeResult.price_deviation > 10 ? "text-red-700" : "text-green-700"
-                      }`}
-                    >
-                      {disputeResult.price_deviation}%
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white p-4 rounded-md border border-gray-200 mb-4">
-                <p className="font-medium mb-2">Recommendation:</p>
-                <p>{disputeResult.recommendation}</p>
-              </div>
-              <div className="bg-white p-4 rounded-md border border-gray-200">
-                <p className="font-medium mb-2">Market Context:</p>
-                <p>{disputeResult.market_context}</p>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              <p>Fill out the form and click "Evaluate Dispute" to get an analysis.</p>
-            </div>
-          )}
+
+        {/* Category */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+          <select
+            name="category"
+            value={formData.category}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          >
+            <option value="">Select a category</option>
+            <option value="Painting">Painting</option>
+            <option value="Flooring">Flooring</option>
+            <option value="Roofing">Roofing</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Plumbing">Plumbing</option>
+            <option value="Carpentry">Carpentry</option>
+            <option value="Masonry">Masonry</option>
+            <option value="HVAC">HVAC</option>
+            <option value="Landscaping">Landscaping</option>
+          </select>
         </div>
-      </div>
+
+        {/* Location */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+          <input
+            type="text"
+            name="location"
+            value={formData.location}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        {/* Description */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            rows="3"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          ></textarea>
+        </div>
+
+        {/* Area (square meters) */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Area (square meters)</label>
+          <input
+            type="number"
+            name="area_sqm"
+            value={formData.area_sqm}
+            onChange={handleInputChange}
+            min="1"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        {/* Complexity Score */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Complexity Score: {formData.complexity_score}
+          </label>
+          <input
+            type="range"
+            name="complexity_score"
+            min="1"
+            max="10"
+            value={formData.complexity_score}
+            onChange={handleInputChange}
+            className="w-full"
+          />
+        </div>
+
+        {/* Material Quality Score */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Material Quality: {formData.material_quality_score}
+          </label>
+          <input
+            type="range"
+            name="material_quality_score"
+            min="1"
+            max="10"
+            value={formData.material_quality_score}
+            onChange={handleInputChange}
+            className="w-full"
+          />
+        </div>
+
+        {/* Budget */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Budget ($)</label>
+          <input
+            type="number"
+            name="budget"
+            value={formData.budget}
+            onChange={handleInputChange}
+            min="1"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        {/* Deadline */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
+          <input
+            type="date"
+            name="deadline"
+            value={formData.deadline}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        {/* Contractor ID (hidden or pre-filled) */}
+        <input type="hidden" name="contractor_id" value={formData.contractor_id} />
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? "Creating..." : "Create Job"}
+        </button>
+      </form>
+
+      {/* Error Message */}
+      {error && (
+        <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-md">{error}</div>
+      )}
     </div>
   );
 }
 
-// Regional Analysis Component
-function RegionalAnalysis({ userType }) {
-  const [formData, setFormData] = useState({
-    category: "",
-    area_sqm: "",
-    complexity_score: 5,
-    material_quality_score: 5,
-    user_type: userType,
-  });
-  const [regionalData, setRegionalData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const categories = [
-    "Painting",
-    "Flooring",
-    "Roofing",
-    "Electrical",
-    "Plumbing",
-    "Carpentry",
-    "Masonry",
-    "HVAC",
-    "Landscaping",
-  ];
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: name === "area_sqm" ? Number(value) : value,
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch("http://localhost:5000/api/analyze-regional-pricing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to analyze regional pricing");
-      setRegionalData(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+// Job Listings Component
+function JobListings({ jobs }) {
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-2xl font-bold mb-6">Regional Pricing Analysis</h2>
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Service Category</label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
-                <option value="">Select a category</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Area (square meters)</label>
-              <input
-                type="number"
-                name="area_sqm"
-                value={formData.area_sqm}
-                onChange={handleInputChange}
-                min="1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Complexity Score: {formData.complexity_score}
-              </label>
-              <input
-                type="range"
-                name="complexity_score"
-                min="1"
-                max="10"
-                value={formData.complexity_score}
-                onChange={handleInputChange}
-                className="w-full"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Material Quality: {formData.material_quality_score}
-              </label>
-              <input
-                type="range"
-                name="material_quality_score"
-                min="1"
-                max="10"
-                value={formData.material_quality_score}
-                onChange={handleInputChange}
-                className="w-full"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "Analyzing..." : "Analyze Regional Pricing"}
-            </button>
-          </form>
-        </div>
-        <div className="bg-gray-50 p-6 rounded-lg">
-          <h3 className="text-lg font-semibold mb-4">Regional Pricing Results</h3>
-          {error && (
-            <div className="p-4 bg-red-50 text-red-700 rounded-md mb-4">{error}</div>
-          )}
-          {regionalData ? (
-            <div>
-              <div className="mb-4">
-                <p className="font-medium mb-2">Average Price Across Regions:</p>
-                <p className="text-2xl font-bold text-blue-700">${regionalData.average_price}</p>
+    <div className="bg-white rounded-lg shadow p-6 mt-6">
+      <h2 className="text-2xl font-bold mb-6">Available Jobs</h2>
+      {jobs.length > 0 ? (
+        <ul className="space-y-4">
+          {jobs.map((job, index) => (
+            <li key={index} className="p-4 bg-gray-50 rounded-lg">
+              <h3 className="text-lg font-semibold">{job.title}</h3>
+              <p className="text-gray-600">{job.description}</p>
+              <div className="mt-2">
+                <p className="text-sm">
+                  <strong>Location:</strong> {job.location}
+                </p>
+                <p className="text-sm">
+                  <strong>Budget:</strong> ${job.budget}
+                </p>
               </div>
-              <div className="mb-4">
-                <p className="font-medium mb-2">Price Variations:</p>
-                <ul className="list-disc pl-5 space-y-1">
-                  {Object.entries(regionalData.price_variations).map(([region, price]) => (
-                    <li key={region}>
-                      {region}: ${price.toFixed(2)}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="bg-white p-4 rounded-md border border-gray-200">
-                <p className="font-medium mb-2">Market Context:</p>
-                <p>{regionalData.market_context}</p>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              <p>Fill out the form and click "Analyze Regional Pricing" to get results.</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Benchmark Report Component
-function BenchmarkReport({ userType }) {
-  const [formData, setFormData] = useState({
-    categories: [],
-    area_sqm: 100,
-    complexity_score: 5,
-    material_quality_score: 5,
-    user_type: userType,
-  });
-  const [reportData, setReportData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const categories = [
-    "Painting",
-    "Flooring",
-    "Roofing",
-    "Electrical",
-    "Plumbing",
-    "Carpentry",
-    "Masonry",
-    "HVAC",
-    "Landscaping",
-  ];
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: name === "area_sqm" ? Number(value) : value,
-    });
-  };
-
-  const handleCheckboxChange = (category) => {
-    const updatedCategories = formData.categories.includes(category)
-      ? formData.categories.filter((cat) => cat !== category)
-      : [...formData.categories, category];
-    setFormData({
-      ...formData,
-      categories: updatedCategories,
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch("http://localhost:5000/api/generate-benchmark-report", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to generate benchmark report");
-      setReportData(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-2xl font-bold mb-6">Benchmark Pricing Report</h2>
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Select Categories</label>
-              <div className="flex flex-wrap gap-2">
-                {categories.map((category) => (
-                  <label key={category} className="inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      value={category}
-                      checked={formData.categories.includes(category)}
-                      onChange={() => handleCheckboxChange(category)}
-                      className="mr-2"
-                    />
-                    {category}
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Area (square meters)</label>
-              <input
-                type="number"
-                name="area_sqm"
-                value={formData.area_sqm}
-                onChange={handleInputChange}
-                min="1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "Generating..." : "Generate Benchmark Report"}
-            </button>
-          </form>
-        </div>
-        <div className="bg-gray-50 p-6 rounded-lg">
-          <h3 className="text-lg font-semibold mb-4">Benchmark Pricing Results</h3>
-          {error && (
-            <div className="p-4 bg-red-50 text-red-700 rounded-md mb-4">{error}</div>
-          )}
-          {reportData ? (
-            <div>
-              <div className="mb-4">
-                <p className="font-medium mb-2">Benchmark Prices:</p>
-                <ul className="list-disc pl-5 space-y-1">
-                  {Object.entries(reportData).map(([category, price]) => (
-                    <li key={category}>
-                      {category}: ${price.toFixed(2)}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              <p>Select categories and click "Generate Benchmark Report" to view results.</p>
-            </div>
-          )}
-        </div>
-      </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-gray-500 text-center">No jobs available at the moment.</p>
+      )}
     </div>
   );
 }
