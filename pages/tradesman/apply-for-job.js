@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import apiClient from "@/apiClient";
 import { useRouter } from "next/router";
 import { ToastContainer, toast } from "react-toastify";
@@ -6,9 +6,19 @@ import "react-toastify/dist/ReactToastify.css";
 
 export default function ApplyForJob() {
   const [formData, setFormData] = useState({});
+  const [user, setUser] = useState(null);
   const router = useRouter();
   const { job_id } = router.query;
-  const user = JSON.parse(sessionStorage.getItem("user"));
+
+  // Load user data from sessionStorage on the client side
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const userData = sessionStorage.getItem("user");
+      if (userData) {
+        setUser(JSON.parse(userData));
+      }
+    }
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -16,6 +26,11 @@ export default function ApplyForJob() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!user) {
+      toast.error("User not registered. Please register first.");
+      return;
+    }
+
     try {
       formData.tradesman_id = user.id; // Attach tradesman ID
       const response = await apiClient.post(`/jobs/${job_id}/applications`, formData);

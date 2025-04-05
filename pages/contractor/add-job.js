@@ -1,13 +1,23 @@
-import { useState } from "react";
-import apiClient from "@/apiClient";
+import { useState, useEffect } from "react";
+import apiClient from "../../../apiClient";
 import { useRouter } from "next/router";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function AddJob() {
   const [formData, setFormData] = useState({});
+  const [user, setUser] = useState(null);
   const router = useRouter();
-  const user = JSON.parse(sessionStorage.getItem("user"));
+
+  // Load user data from sessionStorage on the client side
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const userData = sessionStorage.getItem("user");
+      if (userData) {
+        setUser(JSON.parse(userData));
+      }
+    }
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -15,6 +25,11 @@ export default function AddJob() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!user) {
+      toast.error("User not registered. Please register first.");
+      return;
+    }
+
     try {
       formData.contractor_id = user.id; // Attach contractor ID
       const response = await apiClient.post("/create-job", formData);
