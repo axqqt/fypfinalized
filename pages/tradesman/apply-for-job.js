@@ -4,11 +4,10 @@ import { useRouter } from "next/router";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-export default function ApplyForJob() {
-  const [formData, setFormData] = useState({});
+export default function AvailableJobs() {
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const router = useRouter();
-  const { job_id } = router.query;
 
   // Load user data from sessionStorage on the client side
   useEffect(() => {
@@ -20,35 +19,69 @@ export default function ApplyForJob() {
     }
   }, []);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  // Fetch available jobs when the component mounts
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        if (!user) {
+          toast.error("User not registered. Please register first.");
+          setLoading(false);
+          return;
+        }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!user) {
-      toast.error("User not registered. Please register first.");
-      return;
-    }
+        // Fetch open jobs for tradesmen
+        const response = await apiClient.get("/jobs", {
+          params: {
+            status: "open",
+            user_type: "tradesman",
+          },
+        });
 
-    try {
-      formData.tradesman_id = user.id; // Attach tradesman ID
-      const response = await apiClient.post(`/jobs/${job_id}/applications`, formData);
-      toast.success("Application submitted successfully!");
-      router.push("/tradesman/track-applications");
-    } catch (error) {
-      toast.error(error.response?.data?.error || "Failed to submit application");
-    }
-  };
+        setJobs(response.data.jobs);
+        setLoading(false);
+      } catch (error) {
+        toast.error(error.response?.data?.error || "Failed to fetch jobs.");
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, [user]);
 
   return (
     <div>
-      <h1>Apply for Job</h1>
-      <form onSubmit={handleSubmit}>
-        <input type="number" name="price_quote" placeholder="Price Quote" onChange={handleChange} required />
-        <textarea name="message" placeholder="Message" onChange={handleChange} required />
-        <button type="submit">Submit Application</button>
-      </form>
+      <h1>Available Jobs</h1>
+      {loading ? (
+        <p>Loading jobs...</p>
+      ) : jobs.length === 0 ? (
+        <p>No available jobs at the moment.</p>
+      ) : (
+        <ul style={{ listStyleType: "none", padding: 0 }}>
+          {jobs.map((job) => (
+            <li key={job.id} style={{ marginBottom: "1rem" }}>
+              <h3>{job.title}</h3>
+              <p><strong>Category:</strong> {job.category}</p>
+              <p><strong>Location:</strong> {job.location}</p>
+              <p><strong>Description:</strong> {job.description}</p>
+              <p><strong>Budget:</strong> ${job.budget}</p>
+              <p><strong>Deadline:</strong> {job.deadline}</p>
+              <button
+                onClick={() => window.location.href = `/apply-for-job?job_id=${job.id}`}
+                style={{
+                  background: "#007bff",
+                  color: "#fff",
+                  border: "none",
+                  padding: "0.5rem 1rem",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                Apply Now
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       <ToastContainer />
     </div>
   );
