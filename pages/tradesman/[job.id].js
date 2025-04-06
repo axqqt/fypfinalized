@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import apiClient from "@/apiClient";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Navbar from "@/components/Navbar";
+import Navbar from "../components/Navbar";
 
 export default function ApplyForJob() {
   const router = useRouter();
