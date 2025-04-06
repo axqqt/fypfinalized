@@ -30,7 +30,7 @@ export default function TradesmanDashboard() {
   }, []);
 
   const handleApply = (jobId) => {
-    router.push(`/tradesman/apply-for-job?job_id=${jobId}`);
+    router.push(`/tradesman/${jobId}`);
   };
 
   return (
