@@ -13,6 +13,7 @@ export default function TradesmanDashboard() {
   const [activeTab, setActiveTab] = useState("kanban"); // kanban or apply
   const [disputeReason, setDisputeReason] = useState("");
   const [resolutionDetails, setResolutionDetails] = useState("");
+  const [selectedDispute, setSelectedDispute] = useState(null); // State to track selected dispute
 
   // Fetch user data on component mount
   useEffect(() => {
@@ -62,7 +63,6 @@ export default function TradesmanDashboard() {
       toast.error("Please provide a reason for the dispute.");
       return;
     }
-
     try {
       await apiClient.post(`/jobs/${jobId}/dispute`, {
         reported_by: user.id,
@@ -82,7 +82,6 @@ export default function TradesmanDashboard() {
       toast.error("Please provide resolution details.");
       return;
     }
-
     try {
       await apiClient.post(`/jobs/${jobId}/resolve-dispute`, {
         resolved_by: user.id,
@@ -102,7 +101,6 @@ export default function TradesmanDashboard() {
       toast.error("Please provide a price quote and estimated days.");
       return;
     }
-
     try {
       await apiClient.post(`/jobs/${jobId}/applications`, {
         tradesman_id: user.user_id,
@@ -124,7 +122,6 @@ export default function TradesmanDashboard() {
       dispute: jobs.filter((job) => job.status === "dispute"),
       completed: jobs.filter((job) => job.status === "completed"),
     };
-
     return (
       <div style={{ display: "flex", gap: "2rem", marginTop: "1rem" }}>
         {Object.keys(groupedJobs).map((status) => (
@@ -145,7 +142,6 @@ export default function TradesmanDashboard() {
                   <p>Category: {job.category}</p>
                   <p>Location: {job.location}</p>
                   <p>Budget: ${job.budget}</p>
-
                   {/* Dispute Form */}
                   {job.status === "ongoing" && (
                     <form
@@ -181,43 +177,21 @@ export default function TradesmanDashboard() {
                       </button>
                     </form>
                   )}
-
                   {/* Resolve Dispute Form */}
                   {job.status === "dispute" && (
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        handleResolveDispute(job.id);
+                    <button
+                      onClick={() => setSelectedDispute(job)} // Open dispute details
+                      style={{
+                        padding: "0.5rem 1rem",
+                        background: "#ffc107",
+                        color: "#000",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
                       }}
                     >
-                      <label htmlFor="resolution-details">
-                        Resolution Details
-                      </label>
-                      <textarea
-                        id="resolution-details"
-                        value={resolutionDetails}
-                        onChange={(e) => setResolutionDetails(e.target.value)}
-                        required
-                        style={{
-                          width: "100%",
-                          padding: "0.5rem",
-                          marginBottom: "0.5rem",
-                        }}
-                      />
-                      <button
-                        type="submit"
-                        style={{
-                          padding: "0.5rem 1rem",
-                          background: "#28a745",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: "4px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Resolve Dispute
-                      </button>
-                    </form>
+                      View Dispute
+                    </button>
                   )}
                 </li>
               ))}
@@ -252,7 +226,6 @@ export default function TradesmanDashboard() {
                 <p>Location: {job.location}</p>
                 <p>Budget: ${job.budget}</p>
                 <p>Deadline: {job.deadline}</p>
-
                 {/* Apply Form */}
                 <form
                   onSubmit={(e) => {
@@ -281,7 +254,6 @@ export default function TradesmanDashboard() {
                       marginBottom: "0.5rem",
                     }}
                   />
-
                   <label htmlFor="estimatedDays">Estimated Days</label>
                   <input
                     type="number"
@@ -295,7 +267,6 @@ export default function TradesmanDashboard() {
                       marginBottom: "0.5rem",
                     }}
                   />
-
                   <button
                     type="submit"
                     style={{
@@ -318,12 +289,109 @@ export default function TradesmanDashboard() {
     );
   };
 
+  // Render dispute details modal
+  const renderDisputeModal = () => {
+    if (!selectedDispute) return null;
+
+    return (
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 1000,
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: "#fff",
+            padding: "2rem",
+            borderRadius: "8px",
+            width: "500px",
+            maxWidth: "90%",
+          }}
+        >
+          <h2>Dispute Details</h2>
+          <p><strong>Title:</strong> {selectedDispute.title}</p>
+          <p><strong>Category:</strong> {selectedDispute.category}</p>
+          <p><strong>Location:</strong> {selectedDispute.location}</p>
+          <p><strong>Budget:</strong> ${selectedDispute.budget}</p>
+
+          {/* Form for submitting dispute details */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (user.usertype === "contractor") {
+                handleResolveDispute(selectedDispute.id);
+              } else {
+                handleReportDispute(selectedDispute.id);
+              }
+              setSelectedDispute(null); // Close modal
+            }}
+          >
+            <label htmlFor="dispute-details">
+              {user.usertype === "contractor" ? "Resolution Details" : "Reason for Dispute"}
+            </label>
+            <textarea
+              id="dispute-details"
+              value={user.usertype === "contractor" ? resolutionDetails : disputeReason}
+              onChange={(e) =>
+                user.usertype === "contractor"
+                  ? setResolutionDetails(e.target.value)
+                  : setDisputeReason(e.target.value)
+              }
+              required
+              style={{
+                width: "100%",
+                padding: "0.5rem",
+                marginBottom: "0.5rem",
+              }}
+            />
+            <button
+              type="submit"
+              style={{
+                padding: "0.5rem 1rem",
+                background: "#28a745",
+                color: "#fff",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
+            >
+              Submit
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedDispute(null)} // Close modal
+              style={{
+                padding: "0.5rem 1rem",
+                background: "#6c757d",
+                color: "#fff",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                marginLeft: "0.5rem",
+              }}
+            >
+              Cancel
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div>
       <Navbar />
       <div style={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
         <h1>Tradesman Dashboard</h1>
-
         {/* Tabs for switching views */}
         <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
           <button
@@ -353,9 +421,10 @@ export default function TradesmanDashboard() {
             Apply for Jobs
           </button>
         </div>
-
         {/* Render the selected tab content */}
         {activeTab === "kanban" ? renderKanbanBoard() : renderJobApplication()}
+        {/* Render dispute modal if open */}
+        {renderDisputeModal()}
       </div>
       <ToastContainer />
     </div>
