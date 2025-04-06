@@ -110,6 +110,9 @@ export default function AddJob() {
 
       // Show success message and redirect
       toast.success("Job created successfully!");
+      console.log("====================================");
+      console.log(`Job ID: ${JSON.stringify(response.data.job.id)}`); // Add for debugging
+      console.log("====================================");
       router.push(`/contractor/${response.data.job.id}`);
     } catch (error) {
       console.error("Error creating job:", error); // Add for debugging

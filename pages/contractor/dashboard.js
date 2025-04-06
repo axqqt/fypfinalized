@@ -82,7 +82,7 @@ export default function TradesmanDashboard() {
                   <strong>Deadline:</strong>{" "}
                   {new Date(job.deadline).toLocaleDateString()}
                 </p>
-                <button
+                {user.category === "tradesman" && (<div><button
                   onClick={() => handleApply(job.id)}
                   style={{
                     padding: "0.5rem 1rem",
@@ -94,7 +94,7 @@ export default function TradesmanDashboard() {
                   }}
                 >
                   Apply Now
-                </button>
+                </button></div>)}
               </li>
             ))}
           </ul>

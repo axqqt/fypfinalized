@@ -4,7 +4,6 @@ import apiClient from "@/apiClient";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Navbar from "../components/Navbar";
-import ViewTradesmenApplications from "../contractor/track-jobs";
 
 export default function ApplyForJob() {
   const router = useRouter();
@@ -21,11 +20,13 @@ export default function ApplyForJob() {
     tradesman_id: ""
   });
 
-  // Load user data from sessionStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
       const userData = sessionStorage.getItem("user");
-      if (userData) {
+      if (!userData) {
+        toast.error("You must be logged in to apply for jobs.");
+        router.push("/login"); // Redirect to login page
+      } else {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
         setFormData(prevData => ({
@@ -36,11 +37,10 @@ export default function ApplyForJob() {
     }
   }, []);
 
-  // Fetch job details when component mounts and jobId is available
   useEffect(() => {
     const fetchJobDetails = async () => {
       if (!jobId) return;
-      
+
       try {
         setLoading(true);
         const response = await apiClient.get(`/jobs/${jobId}`);
@@ -55,21 +55,30 @@ export default function ApplyForJob() {
     fetchJobDetails();
   }, [jobId]);
 
-  // Handle form input changes
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!user) {
       toast.error("Please log in to apply for jobs.");
       return;
     }
 
-    // Prepare application data
+    const { price_quote, estimated_days } = formData;
+
+    if (isNaN(price_quote) || parseFloat(price_quote) <= 0) {
+      toast.error("Price quote must be a positive number.");
+      return;
+    }
+
+    if (isNaN(estimated_days) || parseInt(estimated_days) <= 0) {
+      toast.error("Estimated days must be a positive integer.");
+      return;
+    }
+
     const applicationData = {
       ...formData,
       job_id: jobId,
@@ -79,11 +88,9 @@ export default function ApplyForJob() {
     };
 
     try {
-      // Send application to API
-      await apiClient.post("/job-applications", applicationData);
+      await apiClient.post(`/jobs/${jobId}/applications`, applicationData);
       toast.success("Application submitted successfully!");
-      
-      // Redirect to applications list after successful submission
+
       setTimeout(() => {
         router.push("/tradesman/my-applications");
       }, 2000);
@@ -125,9 +132,23 @@ export default function ApplyForJob() {
               padding: "0.5rem 1rem",
               borderRadius: "4px",
               cursor: "pointer",
+              marginRight: "1rem"
             }}
           >
             Back to Available Jobs
+          </button>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              background: "#6c757d",
+              color: "#fff",
+              border: "none",
+              padding: "0.5rem 1rem",
+              borderRadius: "4px",
+              cursor: "pointer"
+            }}
+          >
+            Retry
           </button>
         </div>
         <ToastContainer />
@@ -140,8 +161,7 @@ export default function ApplyForJob() {
       <Navbar />
       <div style={{ padding: "2rem", maxWidth: "800px", margin: "0 auto" }}>
         <h1>Apply for Job</h1>
-        
-        {/* Job details section */}
+
         <div style={{ 
           backgroundColor: "#f8f9fa", 
           padding: "1rem", 
@@ -165,10 +185,11 @@ export default function ApplyForJob() {
           </div>
           <p><strong>Description:</strong> {job.description}</p>
         </div>
-     
-        {/* Application form */}
+
         <form onSubmit={handleSubmit}>
-          <label htmlFor="price_quote"><strong>Your Price Quote ($)</strong></label>
+          <label htmlFor="price_quote" aria-describedby="price-quote-help">
+            <strong>Your Price Quote ($)</strong>
+          </label>
           <input
             type="number"
             id="price_quote"
@@ -178,9 +199,15 @@ export default function ApplyForJob() {
             onChange={handleChange}
             required
             style={inputStyle}
+            aria-describedby="price-quote-help"
           />
-          
-          <label htmlFor="estimated_days"><strong>Estimated Days to Complete</strong></label>
+          <small id="price-quote-help" style={{ display: "block", marginTop: "-0.5rem", marginBottom: "0.5rem" }}>
+            Enter your estimated cost for completing the job.
+          </small>
+
+          <label htmlFor="estimated_days" aria-describedby="days-help">
+            <strong>Estimated Days to Complete</strong>
+          </label>
           <input
             type="number"
             id="estimated_days"
@@ -190,8 +217,12 @@ export default function ApplyForJob() {
             onChange={handleChange}
             required
             style={inputStyle}
+            aria-describedby="days-help"
           />
-          
+          <small id="days-help" style={{ display: "block", marginTop: "-0.5rem", marginBottom: "0.5rem" }}>
+            How many days do you estimate to complete the job?
+          </small>
+
           <label htmlFor="materials_list"><strong>Materials List</strong></label>
           <textarea
             id="materials_list"
@@ -206,7 +237,7 @@ export default function ApplyForJob() {
               resize: "vertical"
             }}
           />
-          
+
           <label htmlFor="proposal_note"><strong>Proposal Note</strong></label>
           <textarea
             id="proposal_note"
@@ -221,7 +252,7 @@ export default function ApplyForJob() {
               resize: "vertical"
             }}
           />
-          
+
           <button
             type="submit"
             style={{
@@ -238,10 +269,10 @@ export default function ApplyForJob() {
             Submit Application
           </button>
         </form>
-        
+
         <div style={{ marginTop: "1.5rem", textAlign: "center" }}>
           <button
-            onClick={() => router.push("/tradesman/available-jobs")}
+            onClick={() => router.push("/tradesman/dashboard")}
             style={{
               padding: "0.5rem 1rem",
               background: "#6c757d",
