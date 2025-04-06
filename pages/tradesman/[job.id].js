@@ -4,6 +4,7 @@ import apiClient from "@/apiClient";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Navbar from "../components/Navbar";
+import ViewTradesmenApplications from "../contractor/track-jobs";
 
 export default function ApplyForJob() {
   const router = useRouter();
@@ -164,7 +165,7 @@ export default function ApplyForJob() {
           </div>
           <p><strong>Description:</strong> {job.description}</p>
         </div>
-        
+     
         {/* Application form */}
         <form onSubmit={handleSubmit}>
           <label htmlFor="price_quote"><strong>Your Price Quote ($)</strong></label>

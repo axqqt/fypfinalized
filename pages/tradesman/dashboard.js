@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import apiClient from "../../apiClient";
 import { useRouter } from "next/router";
 import Navbar from "../components/Navbar";
+import ViewTradesmenApplications from "../contractor/track-jobs";
 
 export default function TradesmanDashboard() {
   const [jobs, setJobs] = useState([]);
@@ -40,8 +41,9 @@ export default function TradesmanDashboard() {
     <div>
       <Navbar />
       <div style={{ padding: "2rem", maxWidth: "800px", margin: "0 auto" }}>
-        <h1>Tradesman Dashboard</h1>
-        <h2>Open Jobs</h2>
+        <h1 className="m-8">Tradesman Dashboard</h1>
+        <ViewTradesmenApplications />
+        <h2 className="m-6">Open Jobs</h2>
         {jobs.length === 0 ? (
           <p>No open jobs available at the moment.</p>
         ) : (
