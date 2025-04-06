@@ -63,24 +63,31 @@ export default function ViewTradesmenApplications() {
   const renderApplications = (jobId) => {
     const jobApplications = applications[jobId] || [];
     return (
-      <ul style={{ listStyleType: "none", padding: 0 }}>
-        {jobApplications.map((app) => (
-          <li key={app.id} style={{ marginBottom: "1rem" }}>
-            <p>
-              <strong>Tradesman:</strong> {app.tradesman_id}
-            </p>
-            <p>
-              <strong>Price Quote:</strong> LKR {app.price_quote}
-            </p>
-            <p>
-              <strong>Message:</strong> {app.message}
-            </p>
-            <p>
-              <strong>Status:</strong> {app.status}
-            </p>
-          </li>
-        ))}
-      </ul>
+      <div className="m-12">
+        <h3>Applications For The Job</h3>
+        <ul style={{ listStyleType: "none", padding: 0 }}>
+          {jobApplications && jobApplications.length ? (
+            jobApplications.map((app) => (
+              <li key={app.id} style={{ marginBottom: "1rem" }}>
+                <p>
+                  <strong>Tradesman:</strong> {app.tradesman_id}
+                </p>
+                <p>
+                  <strong>Price Quote:</strong> LKR {app.price_quote}
+                </p>
+                <p>
+                  <strong>Message:</strong> {app.message}
+                </p>
+                <p>
+                  <strong>Status:</strong> {app.status}
+                </p>
+              </li>
+            ))
+          ) : (
+            <h1>No Applications Found</h1>
+          )}
+        </ul>
+      </div>
     );
   };
 
@@ -103,7 +110,7 @@ export default function ViewTradesmenApplications() {
               <p>
                 <strong>Status:</strong> {job.status}
               </p>
-              <h3>Applications</h3>
+
               {renderApplications(job.id)}
             </li>
           ))}
