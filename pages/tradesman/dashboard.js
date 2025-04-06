@@ -74,19 +74,21 @@ export default function TradesmanDashboard() {
                   <strong>Deadline:</strong>{" "}
                   {new Date(job.deadline).toLocaleDateString()}
                 </p>
-                <button
-                  onClick={() => handleApply(job.id)}
-                  style={{
-                    padding: "0.5rem 1rem",
-                    background: "#007bff",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Apply Now
-                </button>
+                {user.category !== "tradesman" && (
+                  <button
+                    onClick={() => handleApply(job.id)}
+                    style={{
+                      background: "#007bff",
+                      color: "#fff",
+                      border: "none",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Apply
+                  </button>
+                )}
               </li>
             ))}
           </ul>
