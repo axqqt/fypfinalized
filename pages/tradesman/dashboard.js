@@ -1,113 +1,363 @@
 import { useState, useEffect } from "react";
-import apiClient from "../../apiClient";
 import { useRouter } from "next/router";
+import apiClient from "@/apiClient";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Navbar from "../components/Navbar";
-import ViewTradesmenApplications from "../contractor/track-jobs";
-import TaskDashboard from "../components/TaskDashboard";
 
 export default function TradesmanDashboard() {
-  const [jobs, setJobs] = useState([]);
-  const [user, setUser] = useState(null);
   const router = useRouter();
+  const [user, setUser] = useState(null);
+  const [jobs, setJobs] = useState([]);
+  const [availableJobs, setAvailableJobs] = useState([]);
+  const [activeTab, setActiveTab] = useState("kanban"); // kanban or apply
+  const [disputeReason, setDisputeReason] = useState("");
+  const [resolutionDetails, setResolutionDetails] = useState("");
 
+  // Fetch user data on component mount
   useEffect(() => {
     if (typeof window !== "undefined") {
       const userData = sessionStorage.getItem("user");
-      if (userData) {
+      if (!userData) {
+        toast.error("You must be logged in to view this page.");
+        router.push("/login");
+      } else {
         setUser(JSON.parse(userData));
       }
     }
   }, []);
 
+  // Fetch assigned jobs for the tradesman
   useEffect(() => {
     const fetchJobs = async () => {
+      if (!user) return;
       try {
-        const response = await apiClient.get(`/jobs?status=open`);
-        console.log("====================================");
-        console.log(`The response is ${JSON.stringify(response.data)}`);
-        console.log("====================================");
-        setJobs(response.data.jobs);
+        const response = await apiClient.get(`/tradesman/${user.user_id}/tasks`);
+        setJobs(response.data.tasks);
       } catch (error) {
-        console.error("Error fetching jobs:", error);
+        toast.error("Failed to fetch tasks.");
       }
     };
     fetchJobs();
+  }, [user]);
+
+  // Fetch available jobs for application
+  useEffect(() => {
+    const fetchAvailableJobs = async () => {
+      try {
+        const response = await apiClient.get("/jobs", {
+          params: { status: "open" },
+        });
+        setAvailableJobs(response.data.jobs);
+      } catch (error) {
+        toast.error("Failed to fetch available jobs.");
+      }
+    };
+    fetchAvailableJobs();
   }, []);
 
-  const handleApply = (jobId) => {
-    router.push(`/tradesman/${jobId}`);
+  // Report a dispute for a job
+  const handleReportDispute = async (jobId) => {
+    if (!disputeReason.trim()) {
+      toast.error("Please provide a reason for the dispute.");
+      return;
+    }
+
+    try {
+      await apiClient.post(`/jobs/${jobId}/dispute`, {
+        reported_by: user.id,
+        reason: disputeReason,
+      });
+      toast.success("Dispute reported successfully.");
+      setDisputeReason(""); // Clear input
+      router.reload(); // Refresh the page to reflect updated status
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Failed to report dispute.");
+    }
   };
 
-  return (
-    <div>
-      <Navbar />
-      <div style={{ padding: "2rem", maxWidth: "800px", margin: "0 auto" }}>
-        <h1 className="m-8">Tradesman Dashboard</h1>
-        <ViewTradesmenApplications />
-        {/* <TaskDashboard/> */}
-        <h2 className="m-6">Open Jobs</h2>
-        {jobs.length === 0 ? (
-          <p>No open jobs available at the moment.</p>
+  // Resolve a dispute for a job
+  const handleResolveDispute = async (jobId) => {
+    if (!resolutionDetails.trim()) {
+      toast.error("Please provide resolution details.");
+      return;
+    }
+
+    try {
+      await apiClient.post(`/jobs/${jobId}/resolve-dispute`, {
+        resolved_by: user.id,
+        resolution: resolutionDetails,
+      });
+      toast.success("Dispute resolved successfully.");
+      setResolutionDetails(""); // Clear input
+      router.reload(); // Refresh the page to reflect updated status
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Failed to resolve dispute.");
+    }
+  };
+
+  // Apply for a job
+  const handleApplyForJob = async (jobId, priceQuote, estimatedDays) => {
+    if (!priceQuote || !estimatedDays) {
+      toast.error("Please provide a price quote and estimated days.");
+      return;
+    }
+
+    try {
+      await apiClient.post(`/jobs/${jobId}/applications`, {
+        tradesman_id: user.user_id,
+        price_quote: priceQuote,
+        estimated_days: estimatedDays,
+      });
+      toast.success("Application submitted successfully.");
+      router.reload(); // Refresh the page to reflect updated status
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Failed to apply for the job.");
+    }
+  };
+
+  // Kanban board rendering
+  const renderKanbanBoard = () => {
+    const groupedJobs = {
+      assigned: jobs.filter((job) => job.status === "assigned"),
+      ongoing: jobs.filter((job) => job.status === "ongoing"),
+      dispute: jobs.filter((job) => job.status === "dispute"),
+      completed: jobs.filter((job) => job.status === "completed"),
+    };
+
+    return (
+      <div style={{ display: "flex", gap: "2rem", marginTop: "1rem" }}>
+        {Object.keys(groupedJobs).map((status) => (
+          <div key={status} style={{ flex: 1, minWidth: "200px" }}>
+            <h3>{status.charAt(0).toUpperCase() + status.slice(1)}</h3>
+            <ul style={{ listStyle: "none", padding: 0 }}>
+              {groupedJobs[status].map((job) => (
+                <li
+                  key={job.id}
+                  style={{
+                    backgroundColor: "#f8f9fa",
+                    padding: "0.5rem",
+                    borderRadius: "4px",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  <h4>{job.title}</h4>
+                  <p>Category: {job.category}</p>
+                  <p>Location: {job.location}</p>
+                  <p>Budget: ${job.budget}</p>
+
+                  {/* Dispute Form */}
+                  {job.status === "ongoing" && (
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleReportDispute(job.id);
+                      }}
+                    >
+                      <label htmlFor="dispute-reason">Reason for Dispute</label>
+                      <textarea
+                        id="dispute-reason"
+                        value={disputeReason}
+                        onChange={(e) => setDisputeReason(e.target.value)}
+                        required
+                        style={{
+                          width: "100%",
+                          padding: "0.5rem",
+                          marginBottom: "0.5rem",
+                        }}
+                      />
+                      <button
+                        type="submit"
+                        style={{
+                          padding: "0.5rem 1rem",
+                          background: "#dc3545",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Report Dispute
+                      </button>
+                    </form>
+                  )}
+
+                  {/* Resolve Dispute Form */}
+                  {job.status === "dispute" && (
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleResolveDispute(job.id);
+                      }}
+                    >
+                      <label htmlFor="resolution-details">
+                        Resolution Details
+                      </label>
+                      <textarea
+                        id="resolution-details"
+                        value={resolutionDetails}
+                        onChange={(e) => setResolutionDetails(e.target.value)}
+                        required
+                        style={{
+                          width: "100%",
+                          padding: "0.5rem",
+                          marginBottom: "0.5rem",
+                        }}
+                      />
+                      <button
+                        type="submit"
+                        style={{
+                          padding: "0.5rem 1rem",
+                          background: "#28a745",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Resolve Dispute
+                      </button>
+                    </form>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Job application interface rendering
+  const renderJobApplication = () => {
+    return (
+      <div>
+        <h2>Available Jobs</h2>
+        {availableJobs.length === 0 ? (
+          <p>No available jobs at the moment.</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0 }}>
-            {jobs.map((job) => (
+            {availableJobs.map((job) => (
               <li
                 key={job.id}
                 style={{
+                  backgroundColor: "#f8f9fa",
                   padding: "1rem",
-                  border: "1px solid #ccc",
                   borderRadius: "4px",
                   marginBottom: "1rem",
                 }}
               >
                 <h3>{job.title}</h3>
-                <p>
-                  <strong>Category:</strong> {job.category}
-                </p>
-                <p>
-                  <strong>Location:</strong> {job.location}
-                </p>
-                <p>
-                  <strong>Budget:</strong> ${job.budget}
-                </p> <p>
-                  <strong>Fair Price Estimate:</strong> ${job.fair_price_estimate}
-                </p>
-                <p>
-                  <strong>Deadline:</strong>{" "}
-                  {new Date(job.deadline).toLocaleDateString()}
-                </p><button
-                  button onClick={() => handleApply(job.id)}
+                <p>Category: {job.category}</p>
+                <p>Location: {job.location}</p>
+                <p>Budget: ${job.budget}</p>
+                <p>Deadline: {job.deadline}</p>
+
+                {/* Apply Form */}
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const priceQuote = parseFloat(
+                      e.target.elements.priceQuote.value
+                    );
+                    const estimatedDays = parseInt(
+                      e.target.elements.estimatedDays.value,
+                      10
+                    );
+                    handleApplyForJob(job.id, priceQuote, estimatedDays);
+                  }}
+                >
+                  <label htmlFor="priceQuote">Price Quote ($)</label>
+                  <input
+                    type="number"
+                    id="priceQuote"
+                    name="priceQuote"
+                    min="0"
+                    step="0.01"
+                    required
                     style={{
-                      background: "#007bff",
-                      color: "#fff",
-                      border: "none",
-                      padding: "0.5rem 1rem",
-                      borderRadius: "4px",
-                      cursor: "pointer",
+                      width: "100%",
+                      padding: "0.5rem",
+                      marginBottom: "0.5rem",
                     }}
-                  >
-                    Apply
-                  </button>
-                {/* {user.category !== "tradesman" && (
+                  />
+
+                  <label htmlFor="estimatedDays">Estimated Days</label>
+                  <input
+                    type="number"
+                    id="estimatedDays"
+                    name="estimatedDays"
+                    min="1"
+                    required
+                    style={{
+                      width: "100%",
+                      padding: "0.5rem",
+                      marginBottom: "0.5rem",
+                    }}
+                  />
+
                   <button
-                  button onClick={() => handleApply(job.id)}
+                    type="submit"
                     style={{
+                      padding: "0.5rem 1rem",
                       background: "#007bff",
                       color: "#fff",
                       border: "none",
-                      padding: "0.5rem 1rem",
                       borderRadius: "4px",
                       cursor: "pointer",
                     }}
                   >
-                    Apply
+                    Apply for Job
                   </button>
-                )} */}
+                </form>
               </li>
             ))}
           </ul>
         )}
       </div>
+    );
+  };
+
+  return (
+    <div>
+      <Navbar />
+      <div style={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
+        <h1>Tradesman Dashboard</h1>
+
+        {/* Tabs for switching views */}
+        <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+          <button
+            onClick={() => setActiveTab("kanban")}
+            style={{
+              padding: "0.5rem 1rem",
+              background: activeTab === "kanban" ? "#007bff" : "#f8f9fa",
+              color: activeTab === "kanban" ? "#fff" : "#000",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            Kanban Board
+          </button>
+          <button
+            onClick={() => setActiveTab("apply")}
+            style={{
+              padding: "0.5rem 1rem",
+              background: activeTab === "apply" ? "#007bff" : "#f8f9fa",
+              color: activeTab === "apply" ? "#fff" : "#000",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            Apply for Jobs
+          </button>
+        </div>
+
+        {/* Render the selected tab content */}
+        {activeTab === "kanban" ? renderKanbanBoard() : renderJobApplication()}
+      </div>
+      <ToastContainer />
     </div>
   );
 }

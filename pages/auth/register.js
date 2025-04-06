@@ -17,7 +17,9 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await apiClient.post("/register", formData);
+      const response = await apiClient.post("/register", formData);
+      console.log(`Response data ${JSON.stringify(response.data)}`); // Add for debugging
+      
       toast.success("Registered successfully!");
       router.push("/auth/login");
     } catch (error) {

@@ -26,6 +26,9 @@ export default function ApplyForJob() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const userData = sessionStorage.getItem("user");
+      console.log('====================================');
+      console.log(`User data from sessionStorage: ${userData}`);
+      console.log('====================================');
       if (!userData) {
         toast.error("You must be logged in to apply for jobs.");
         router.push("/login"); // Redirect to login page
@@ -106,10 +109,13 @@ export default function ApplyForJob() {
       return;
     }
 
+    console.log('====================================');
+    console.log(`User ID: ${JSON.stringify(user.user_id)}`);
+    console.log('====================================');
     const applicationData = {
       ...formData,
       job_id: jobId,
-      tradesman_id: user.id,
+      tradesman_id: user.user_id,
       price_quote: parseFloat(formData.price_quote),
       estimated_days: parseInt(formData.estimated_days),
     };

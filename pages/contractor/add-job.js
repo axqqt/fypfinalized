@@ -113,7 +113,7 @@ export default function AddJob() {
       console.log("====================================");
       console.log(`Job ID: ${JSON.stringify(response.data.job.id)}`); // Add for debugging
       console.log("====================================");
-      router.push(`/contractor/${response.data.job.id}`);
+      router.push(`/contractor/dashboard`);
     } catch (error) {
       console.error("Error creating job:", error); // Add for debugging
       // Handle errors
