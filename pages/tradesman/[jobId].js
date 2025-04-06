@@ -7,7 +7,7 @@ import Navbar from "../components/Navbar";
 
 export default function ApplyForJob() {
   const router = useRouter();
-  const { id: jobId } = router.query; // Get job ID from URL
+  const { jobId } = router.query; // Get job ID from URL
 
   const [loading, setLoading] = useState(true);
   const [job, setJob] = useState(null);
@@ -17,7 +17,7 @@ export default function ApplyForJob() {
     materials_list: "",
     estimated_days: "",
     proposal_note: "",
-    tradesman_id: ""
+    tradesman_id: "",
   });
 
   useEffect(() => {
@@ -29,9 +29,9 @@ export default function ApplyForJob() {
       } else {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
-        setFormData(prevData => ({
+        setFormData((prevData) => ({
           ...prevData,
-          tradesman_id: parsedUser.id
+          tradesman_id: parsedUser.id,
         }));
       }
     }
@@ -44,10 +44,15 @@ export default function ApplyForJob() {
       try {
         setLoading(true);
         const response = await apiClient.get(`/jobs/${jobId}`);
-        setJob(response.data.job);
+        console.log("====================================");
+        console.log(`The response is ${JSON.stringify(response.data)}`);
+        console.log("====================================");
+        setJob(response.data); // ✅ updated here
         setLoading(false);
       } catch (error) {
-        toast.error(error.response?.data?.error || "Failed to fetch job details.");
+        toast.error(
+          error.response?.data?.error || "Failed to fetch job details."
+        );
         setLoading(false);
       }
     };
@@ -84,7 +89,7 @@ export default function ApplyForJob() {
       job_id: jobId,
       tradesman_id: user.id,
       price_quote: parseFloat(formData.price_quote),
-      estimated_days: parseInt(formData.estimated_days)
+      estimated_days: parseInt(formData.estimated_days),
     };
 
     try {
@@ -95,14 +100,16 @@ export default function ApplyForJob() {
         router.push("/tradesman/my-applications");
       }, 2000);
     } catch (error) {
-      toast.error(error.response?.data?.error || "Failed to submit application.");
+      toast.error(
+        error.response?.data?.error || "Failed to submit application."
+      );
     }
   };
 
-  const inputStyle = { 
-    width: "100%", 
-    padding: "0.5rem", 
-    marginBottom: "1rem" 
+  const inputStyle = {
+    width: "100%",
+    padding: "0.5rem",
+    marginBottom: "1rem",
   };
 
   if (loading) {
@@ -132,7 +139,7 @@ export default function ApplyForJob() {
               padding: "0.5rem 1rem",
               borderRadius: "4px",
               cursor: "pointer",
-              marginRight: "1rem"
+              marginRight: "1rem",
             }}
           >
             Back to Available Jobs
@@ -145,7 +152,7 @@ export default function ApplyForJob() {
               border: "none",
               padding: "0.5rem 1rem",
               borderRadius: "4px",
-              cursor: "pointer"
+              cursor: "pointer",
             }}
           >
             Retry
@@ -162,28 +169,50 @@ export default function ApplyForJob() {
       <div style={{ padding: "2rem", maxWidth: "800px", margin: "0 auto" }}>
         <h1>Apply for Job</h1>
 
-        <div style={{ 
-          backgroundColor: "#f8f9fa", 
-          padding: "1rem", 
-          borderRadius: "4px", 
-          marginBottom: "1.5rem" 
-        }}>
+        <div
+          style={{
+            backgroundColor: "#f8f9fa",
+            padding: "1rem",
+            borderRadius: "4px",
+            marginBottom: "1.5rem",
+          }}
+        >
           <h2>{job.title}</h2>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
             <div style={{ flex: "1", minWidth: "200px" }}>
-              <p><strong>Category:</strong> {job.category}</p>
-              <p><strong>Location:</strong> {job.location}</p>
-              <p><strong>Area:</strong> {job.area_sqm} sqm</p>
-              <p><strong>Budget:</strong> ${job.budget}</p>
+              <p>
+                <strong>Category:</strong> {job.category}
+              </p>
+              <p>
+                <strong>Location:</strong> {job.location}
+              </p>
+              <p>
+                <strong>Area:</strong> {job.area_sqm} sqm
+              </p>
+              <p>
+                <strong>Budget:</strong> ${job.budget}
+              </p>
             </div>
             <div style={{ flex: "1", minWidth: "200px" }}>
-              <p><strong>Complexity Score:</strong> {job.complexity_score}/10</p>
-              <p><strong>Material Quality:</strong> {job.material_quality_score}/10</p>
-              <p><strong>Deadline:</strong> {job.deadline}</p>
-              <p><strong>Fair Price Estimate:</strong> ${job.fair_price_estimate}</p>
+              <p>
+                <strong>Complexity Score:</strong> {job.complexity_score}/10
+              </p>
+              <p>
+                <strong>Material Quality:</strong> {job.material_quality_score}
+                /10
+              </p>
+              <p>
+                <strong>Deadline:</strong> {job.deadline}
+              </p>
+              <p>
+                <strong>Fair Price Estimate:</strong> $
+                {job.fair_price_estimate}
+              </p>
             </div>
           </div>
-          <p><strong>Description:</strong> {job.description}</p>
+          <p>
+            <strong>Description:</strong> {job.description}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -201,7 +230,14 @@ export default function ApplyForJob() {
             style={inputStyle}
             aria-describedby="price-quote-help"
           />
-          <small id="price-quote-help" style={{ display: "block", marginTop: "-0.5rem", marginBottom: "0.5rem" }}>
+          <small
+            id="price-quote-help"
+            style={{
+              display: "block",
+              marginTop: "-0.5rem",
+              marginBottom: "0.5rem",
+            }}
+          >
             Enter your estimated cost for completing the job.
           </small>
 
@@ -219,11 +255,20 @@ export default function ApplyForJob() {
             style={inputStyle}
             aria-describedby="days-help"
           />
-          <small id="days-help" style={{ display: "block", marginTop: "-0.5rem", marginBottom: "0.5rem" }}>
+          <small
+            id="days-help"
+            style={{
+              display: "block",
+              marginTop: "-0.5rem",
+              marginBottom: "0.5rem",
+            }}
+          >
             How many days do you estimate to complete the job?
           </small>
 
-          <label htmlFor="materials_list"><strong>Materials List</strong></label>
+          <label htmlFor="materials_list">
+            <strong>Materials List</strong>
+          </label>
           <textarea
             id="materials_list"
             name="materials_list"
@@ -234,11 +279,13 @@ export default function ApplyForJob() {
             style={{
               ...inputStyle,
               height: "100px",
-              resize: "vertical"
+              resize: "vertical",
             }}
           />
 
-          <label htmlFor="proposal_note"><strong>Proposal Note</strong></label>
+          <label htmlFor="proposal_note">
+            <strong>Proposal Note</strong>
+          </label>
           <textarea
             id="proposal_note"
             name="proposal_note"
@@ -249,7 +296,7 @@ export default function ApplyForJob() {
             style={{
               ...inputStyle,
               height: "150px",
-              resize: "vertical"
+              resize: "vertical",
             }}
           />
 
@@ -263,7 +310,7 @@ export default function ApplyForJob() {
               border: "none",
               borderRadius: "4px",
               cursor: "pointer",
-              fontSize: "1rem"
+              fontSize: "1rem",
             }}
           >
             Submit Application
