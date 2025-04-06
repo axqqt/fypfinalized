@@ -23,6 +23,7 @@ export default function ContractorDashboard() {
       try {
         if (user) {
           const response = await apiClient.get(`/jobs?user_id=${user.id}&user_type=contractor`);
+        
           setJobs(response.data.jobs);
         }
       } catch (error) {
@@ -49,6 +50,7 @@ export default function ContractorDashboard() {
                 <p><strong>Category:</strong> {job.category}</p>
                 <p><strong>Location:</strong> {job.location}</p>
                 <p><strong>Status:</strong> {job.status}</p>
+                <p><strong>Budget:</strong> ${job.budget}</p>
                 <p><strong>Budget:</strong> ${job.budget}</p>
                 <p><strong>Deadline:</strong> {new Date(job.deadline).toLocaleDateString()}</p>
               </li>

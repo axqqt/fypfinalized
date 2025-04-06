@@ -21,6 +21,9 @@ export default function TradesmanDashboard() {
     const fetchJobs = async () => {
       try {
         const response = await apiClient.get(`/jobs?status=open`);
+        console.log("====================================");
+        console.log(`The response is ${JSON.stringify(response.data)}`);
+        console.log("====================================");
         setJobs(response.data.jobs);
       } catch (error) {
         console.error("Error fetching jobs:", error);
@@ -44,13 +47,40 @@ export default function TradesmanDashboard() {
         ) : (
           <ul style={{ listStyle: "none", padding: 0 }}>
             {jobs.map((job) => (
-              <li key={job.id} style={{ padding: "1rem", border: "1px solid #ccc", borderRadius: "4px", marginBottom: "1rem" }}>
+              <li
+                key={job.id}
+                style={{
+                  padding: "1rem",
+                  border: "1px solid #ccc",
+                  borderRadius: "4px",
+                  marginBottom: "1rem",
+                }}
+              >
                 <h3>{job.title}</h3>
-                <p><strong>Category:</strong> {job.category}</p>
-                <p><strong>Location:</strong> {job.location}</p>
-                <p><strong>Budget:</strong> ${job.budget}</p>
-                <p><strong>Deadline:</strong> {new Date(job.deadline).toLocaleDateString()}</p>
-                <button onClick={() => handleApply(job.id)} style={{ padding: "0.5rem 1rem", background: "#007bff", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}>
+                <p>
+                  <strong>Category:</strong> {job.category}
+                </p>
+                <p>
+                  <strong>Location:</strong> {job.location}
+                </p>
+                <p>
+                  <strong>Budget:</strong> ${job.budget}
+                </p>
+                <p>
+                  <strong>Deadline:</strong>{" "}
+                  {new Date(job.deadline).toLocaleDateString()}
+                </p>
+                <button
+                  onClick={() => handleApply(job.id)}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    background: "#007bff",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
                   Apply Now
                 </button>
               </li>
