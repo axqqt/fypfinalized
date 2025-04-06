@@ -17,23 +17,48 @@ export default function AddJob() {
     material_quality_score: "",
     budget: "",
     deadline: "",
-    contractor_id: ""  // Initialize the contractor_id field
+    contractor_id: "", // Initialize the contractor_id field
   });
   const [user, setUser] = useState(null);
   const router = useRouter();
 
   // Categories and locations from backend data
   const categories = [
-    'Masonry', 'Carpentry', 'Plumbing', 'Electrical', 'Painting',
-    'Tiling', 'Roofing', 'Foundation Work', 'Interior Design',
-    'Landscaping', 'HVAC', 'General Contracting'
+    "Masonry",
+    "Carpentry",
+    "Plumbing",
+    "Electrical",
+    "Painting",
+    "Tiling",
+    "Roofing",
+    "Foundation Work",
+    "Interior Design",
+    "Landscaping",
+    "HVAC",
+    "General Contracting",
   ];
-  
+
   const locations = [
-    'Colombo', 'Gampaha', 'Kandy', 'Galle', 'Negombo',
-    'Jaffna', 'Anuradhapura', 'Batticaloa', 'Trincomalee', 'Matara',
-    'Kurunegala', 'Ratnapura', 'Badulla', 'Nuwara Eliya', 'Hambantota',
-    'Kalmunai', 'Vavuniya', 'Matale', 'Puttalam', 'Kegalle'
+    "Colombo",
+    "Gampaha",
+    "Kandy",
+    "Galle",
+    "Negombo",
+    "Jaffna",
+    "Anuradhapura",
+    "Batticaloa",
+    "Trincomalee",
+    "Matara",
+    "Kurunegala",
+    "Ratnapura",
+    "Badulla",
+    "Nuwara Eliya",
+    "Hambantota",
+    "Kalmunai",
+    "Vavuniya",
+    "Matale",
+    "Puttalam",
+    "Kegalle",
   ];
 
   // Load user data from sessionStorage
@@ -44,9 +69,9 @@ export default function AddJob() {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
         // Set the contractor_id in formData as soon as we get the user
-        setFormData(prevData => ({
+        setFormData((prevData) => ({
           ...prevData,
-          contractor_id: parsedUser.id
+          contractor_id: parsedUser.id,
         }));
       }
     }
@@ -60,7 +85,7 @@ export default function AddJob() {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!user) {
       toast.error("User not registered. Please register first.");
       return;
@@ -74,7 +99,7 @@ export default function AddJob() {
       area_sqm: parseFloat(formData.area_sqm),
       complexity_score: parseFloat(formData.complexity_score),
       material_quality_score: parseFloat(formData.material_quality_score),
-      budget: parseFloat(formData.budget)
+      budget: parseFloat(formData.budget),
     };
 
     console.log("Submitting data:", submissionData); // Add for debugging
@@ -85,7 +110,7 @@ export default function AddJob() {
 
       // Show success message and redirect
       toast.success("Job created successfully!");
-      router.push(`/contractor/view-applications?job_id=${response.data.job.id}`);
+      router.push(`/contractor/${response.data.job.id}`);
     } catch (error) {
       console.error("Error creating job:", error); // Add for debugging
       // Handle errors
@@ -93,10 +118,10 @@ export default function AddJob() {
     }
   };
 
-  const inputStyle = { 
-    width: "100%", 
-    padding: "0.5rem", 
-    marginBottom: "1rem" 
+  const inputStyle = {
+    width: "100%",
+    padding: "0.5rem",
+    marginBottom: "1rem",
   };
 
   return (
@@ -113,7 +138,7 @@ export default function AddJob() {
             required
             style={inputStyle}
           />
-          
+
           <select
             name="category"
             value={formData.category}
@@ -122,13 +147,13 @@ export default function AddJob() {
             style={inputStyle}
           >
             <option value="">Select Category</option>
-            {categories.map(category => (
+            {categories.map((category) => (
               <option key={category} value={category}>
                 {category}
               </option>
             ))}
           </select>
-          
+
           <select
             name="location"
             value={formData.location}
@@ -137,13 +162,13 @@ export default function AddJob() {
             style={inputStyle}
           >
             <option value="">Select Location</option>
-            {locations.map(location => (
+            {locations.map((location) => (
               <option key={location} value={location}>
                 {location}
               </option>
             ))}
           </select>
-          
+
           <textarea
             name="description"
             placeholder="Description"
@@ -155,7 +180,7 @@ export default function AddJob() {
               resize: "vertical",
             }}
           />
-          
+
           <input
             type="number"
             name="area_sqm"
@@ -165,7 +190,7 @@ export default function AddJob() {
             required
             style={inputStyle}
           />
-          
+
           <input
             type="number"
             name="complexity_score"
@@ -177,7 +202,7 @@ export default function AddJob() {
             required
             style={inputStyle}
           />
-          
+
           <input
             type="number"
             name="material_quality_score"
@@ -189,7 +214,7 @@ export default function AddJob() {
             required
             style={inputStyle}
           />
-          
+
           <input
             type="number"
             name="budget"
@@ -199,7 +224,7 @@ export default function AddJob() {
             required
             style={inputStyle}
           />
-          
+
           <input
             type="date"
             name="deadline"
@@ -208,14 +233,10 @@ export default function AddJob() {
             required
             style={inputStyle}
           />
-          
+
           {/* Hidden field for contractor ID */}
-          <input 
-            type="hidden" 
-            name="contractor_id" 
-            value={user?.id || ""} 
-          />
-          
+          <input type="hidden" name="contractor_id" value={user?.id || ""} />
+
           <button
             type="submit"
             style={{

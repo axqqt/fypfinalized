@@ -48,7 +48,7 @@ export default function TradesmanDashboard() {
     <div>
       <Navbar />
       <div style={{ padding: "2rem", maxWidth: "800px", margin: "0 auto" }}>
-        <h1 className="m-8">Tradesman Dashboard</h1>
+        <h1 className="m-8">Contractor Dashboard</h1>
         <ViewTradesmenApplications />
         <h2 className="m-6">Open Jobs</h2>
         {jobs.length === 0 ? (
