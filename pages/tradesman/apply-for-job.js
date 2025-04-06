@@ -66,7 +66,7 @@ export default function AvailableJobs() {
               <p><strong>Budget:</strong> ${job.budget}</p>
               <p><strong>Deadline:</strong> {job.deadline}</p>
               <button
-                onClick={() => window.location.href = `/apply-for-job?job_id=${job.id}`}
+                onClick={() => window.location.href = `/apply-for-job/${job.id}`}
                 style={{
                   background: "#007bff",
                   color: "#fff",
