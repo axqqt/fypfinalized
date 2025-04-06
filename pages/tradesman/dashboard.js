@@ -3,6 +3,7 @@ import apiClient from "../../apiClient";
 import { useRouter } from "next/router";
 import Navbar from "../components/Navbar";
 import ViewTradesmenApplications from "../contractor/track-jobs";
+import TaskDashboard from "../components/TaskDashboard";
 
 export default function TradesmanDashboard() {
   const [jobs, setJobs] = useState([]);
@@ -43,6 +44,7 @@ export default function TradesmanDashboard() {
       <div style={{ padding: "2rem", maxWidth: "800px", margin: "0 auto" }}>
         <h1 className="m-8">Tradesman Dashboard</h1>
         <ViewTradesmenApplications />
+        {/* <TaskDashboard/> */}
         <h2 className="m-6">Open Jobs</h2>
         {jobs.length === 0 ? (
           <p>No open jobs available at the moment.</p>
@@ -73,10 +75,8 @@ export default function TradesmanDashboard() {
                 <p>
                   <strong>Deadline:</strong>{" "}
                   {new Date(job.deadline).toLocaleDateString()}
-                </p>
-                {user.category !== "tradesman" && (
-                  <button
-                    onClick={() => handleApply(job.id)}
+                </p><button
+                  button onClick={() => handleApply(job.id)}
                     style={{
                       background: "#007bff",
                       color: "#fff",
@@ -88,7 +88,21 @@ export default function TradesmanDashboard() {
                   >
                     Apply
                   </button>
-                )}
+                {/* {user.category !== "tradesman" && (
+                  <button
+                  button onClick={() => handleApply(job.id)}
+                    style={{
+                      background: "#007bff",
+                      color: "#fff",
+                      border: "none",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Apply
+                  </button>
+                )} */}
               </li>
             ))}
           </ul>

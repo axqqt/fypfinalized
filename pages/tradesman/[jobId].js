@@ -18,7 +18,10 @@ export default function ApplyForJob() {
     estimated_days: "",
     proposal_note: "",
     tradesman_id: "",
+    cover_letter: "", // Optional field
+    availability_date: "", // Optional field
   });
+  const [isSubmitted, setIsSubmitted] = useState(false); // State for redirect after submission
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -47,7 +50,7 @@ export default function ApplyForJob() {
         console.log("====================================");
         console.log(`The response is ${JSON.stringify(response.data)}`);
         console.log("====================================");
-        setJob(response.data); // ✅ updated here
+        setJob(response.data);
         setLoading(false);
       } catch (error) {
         toast.error(
@@ -60,8 +63,15 @@ export default function ApplyForJob() {
     fetchJobDetails();
   }, [jobId]);
 
+  useEffect(() => {
+    if (isSubmitted) {
+      router.push("/tradesman/my-applications");
+    }
+  }, [isSubmitted]);
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = async (e) => {
@@ -72,8 +82,10 @@ export default function ApplyForJob() {
       return;
     }
 
-    const { price_quote, estimated_days } = formData;
+    const { price_quote, estimated_days, materials_list, proposal_note } =
+      formData;
 
+    // Validation
     if (isNaN(price_quote) || parseFloat(price_quote) <= 0) {
       toast.error("Price quote must be a positive number.");
       return;
@@ -81,6 +93,16 @@ export default function ApplyForJob() {
 
     if (isNaN(estimated_days) || parseInt(estimated_days) <= 0) {
       toast.error("Estimated days must be a positive integer.");
+      return;
+    }
+
+    if (!materials_list.trim()) {
+      toast.error("Materials list cannot be empty.");
+      return;
+    }
+
+    if (!proposal_note.trim()) {
+      toast.error("Proposal note cannot be empty.");
       return;
     }
 
@@ -95,10 +117,7 @@ export default function ApplyForJob() {
     try {
       await apiClient.post(`/jobs/${jobId}/applications`, applicationData);
       toast.success("Application submitted successfully!");
-
-      setTimeout(() => {
-        router.push("/tradesman/my-applications");
-      }, 2000);
+      setIsSubmitted(true); // Trigger redirect
     } catch (error) {
       toast.error(
         error.response?.data?.error || "Failed to submit application."
@@ -298,6 +317,34 @@ export default function ApplyForJob() {
               height: "150px",
               resize: "vertical",
             }}
+          />
+
+          <label htmlFor="cover_letter">
+            <strong>Cover Letter (Optional)</strong>
+          </label>
+          <textarea
+            id="cover_letter"
+            name="cover_letter"
+            placeholder="Write a cover letter for this job"
+            value={formData.cover_letter}
+            onChange={handleChange}
+            style={{
+              ...inputStyle,
+              height: "100px",
+              resize: "vertical",
+            }}
+          />
+
+          <label htmlFor="availability_date">
+            <strong>Availability Date (Optional)</strong>
+          </label>
+          <input
+            type="date"
+            id="availability_date"
+            name="availability_date"
+            value={formData.availability_date}
+            onChange={handleChange}
+            style={inputStyle}
           />
 
           <button
