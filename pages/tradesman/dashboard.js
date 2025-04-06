@@ -67,6 +67,8 @@ export default function TradesmanDashboard() {
                 </p>
                 <p>
                   <strong>Budget:</strong> ${job.budget}
+                </p> <p>
+                  <strong>Fair Price Estimate:</strong> ${job.fair_price_estimate}
                 </p>
                 <p>
                   <strong>Deadline:</strong>{" "}

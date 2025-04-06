@@ -42,12 +42,17 @@ export default function ViewTradesmenApplications() {
         // Fetch applications for each job
         const appsByJob = {};
         for (const job of response.data.jobs) {
-          const appResponse = await apiClient.get(`/jobs/${job.id}/applications`);
+          const appResponse = await apiClient.get(
+            `/jobs/${job.id}/applications`
+          );
           appsByJob[job.id] = appResponse.data.applications;
         }
         setApplications(appsByJob);
       } catch (error) {
-        toast.error(error.response?.data?.error || "Failed to fetch jobs and applications.");
+        toast.error(
+          error.response?.data?.error ||
+            "Failed to fetch jobs and applications."
+        );
       }
     };
 
@@ -61,10 +66,18 @@ export default function ViewTradesmenApplications() {
       <ul style={{ listStyleType: "none", padding: 0 }}>
         {jobApplications.map((app) => (
           <li key={app.id} style={{ marginBottom: "1rem" }}>
-            <p><strong>Tradesman:</strong> {app.tradesman_id}</p>
-            <p><strong>Price Quote:</strong> ${app.price_quote}</p>
-            <p><strong>Message:</strong> {app.message}</p>
-            <p><strong>Status:</strong> {app.status}</p>
+            <p>
+              <strong>Tradesman:</strong> {app.tradesman_id}
+            </p>
+            <p>
+              <strong>Price Quote:</strong> LKR {app.price_quote}
+            </p>
+            <p>
+              <strong>Message:</strong> {app.message}
+            </p>
+            <p>
+              <strong>Status:</strong> {app.status}
+            </p>
           </li>
         ))}
       </ul>
@@ -81,9 +94,15 @@ export default function ViewTradesmenApplications() {
           {jobs.map((job) => (
             <li key={job.id} style={{ marginBottom: "2rem" }}>
               <h2>{job.title}</h2>
-              <p><strong>Category:</strong> {job.category}</p>
-              <p><strong>Location:</strong> {job.location}</p>
-              <p><strong>Status:</strong> {job.status}</p>
+              <p>
+                <strong>Category:</strong> {job.category}
+              </p>
+              <p>
+                <strong>Location:</strong> {job.location}
+              </p>
+              <p>
+                <strong>Status:</strong> {job.status}
+              </p>
               <h3>Applications</h3>
               {renderApplications(job.id)}
             </li>
