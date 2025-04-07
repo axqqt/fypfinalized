@@ -14,6 +14,12 @@ export default function MyApplications() {
       const userData = sessionStorage.getItem("user");
       if (userData) {
         setUser(JSON.parse(userData));
+        console.log("====================================");
+        console.log(
+          "User data loaded from sessionStorage:",
+          user
+        );
+        console.log("====================================");
       }
     }
   }, []);
@@ -23,7 +29,9 @@ export default function MyApplications() {
     const fetchApplications = async () => {
       try {
         if (user) {
-          const response = await apiClient.get(`/tradesman/${user.id}/applications`);
+          const response = await apiClient.get(
+            `/tradesman/${user.id}/applications`
+          );
           setApplications(response.data.applications);
         }
       } catch (error) {
@@ -43,14 +51,37 @@ export default function MyApplications() {
         ) : (
           <ul style={{ listStyle: "none", padding: 0 }}>
             {applications.map((app) => (
-              <li key={app.id} style={{ padding: "1rem", border: "1px solid #ccc", borderRadius: "4px", marginBottom: "1rem" }}>
+              <li
+                key={app.id}
+                style={{
+                  padding: "1rem",
+                  border: "1px solid #ccc",
+                  borderRadius: "4px",
+                  marginBottom: "1rem",
+                }}
+              >
                 <h3>{app.job_details?.title || "Job details unavailable"}</h3>
-                <p><strong>Status:</strong> {app.status}</p>
-                <p><strong>Price Quote:</strong> ${app.price_quote}</p>
-                <p><strong>Message:</strong> {app.message}</p>
-                <p><strong>Applied On:</strong> {new Date(app.created_at).toLocaleDateString()}</p>
-                <p><strong>Job Category:</strong> {app.job_details?.category || "N/A"}</p>
-                <p><strong>Job Location:</strong> {app.job_details?.location || "N/A"}</p>
+                <p>
+                  <strong>Status:</strong> {app.status}
+                </p>
+                <p>
+                  <strong>Price Quote:</strong> ${app.price_quote}
+                </p>
+                <p>
+                  <strong>Message:</strong> {app.message}
+                </p>
+                <p>
+                  <strong>Applied On:</strong>{" "}
+                  {new Date(app.created_at).toLocaleDateString()}
+                </p>
+                <p>
+                  <strong>Job Category:</strong>{" "}
+                  {app.job_details?.category || "N/A"}
+                </p>
+                <p>
+                  <strong>Job Location:</strong>{" "}
+                  {app.job_details?.location || "N/A"}
+                </p>
               </li>
             ))}
           </ul>
