@@ -94,7 +94,7 @@ export default function AddJob() {
     // Double-check that contractor_id is included
     const submissionData = {
       ...formData,
-      contractor_id: "test",
+      contractor_id: user.user_id, // Use the user ID from sessionStorage
       // Make sure these are converted to numbers
       area_sqm: parseFloat(formData.area_sqm),
       complexity_score: parseFloat(formData.complexity_score),
