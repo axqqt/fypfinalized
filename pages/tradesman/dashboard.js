@@ -327,7 +327,7 @@ export default function TradesmanDashboard() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (user.usertype === "contractor") {
+              if (user.user_type === "contractor") {
                 handleResolveDispute(selectedDispute.id);
               } else {
                 handleReportDispute(selectedDispute.id);
@@ -336,13 +336,13 @@ export default function TradesmanDashboard() {
             }}
           >
             <label htmlFor="dispute-details">
-              {user.usertype === "contractor" ? "Resolution Details" : "Reason for Dispute"}
+              {user.user_type === "contractor" ? "Resolution Details" : "Reason for Dispute"}
             </label>
             <textarea
               id="dispute-details"
-              value={user.usertype === "contractor" ? resolutionDetails : disputeReason}
+              value={user.user_type === "contractor" ? resolutionDetails : disputeReason}
               onChange={(e) =>
-                user.usertype === "contractor"
+                user.user_type === "contractor"
                   ? setResolutionDetails(e.target.value)
                   : setDisputeReason(e.target.value)
               }

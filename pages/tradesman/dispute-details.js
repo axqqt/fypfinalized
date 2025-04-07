@@ -1,27 +1,29 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import apiClient from "@/apiClient"; // Ensure this points to localhost:5000/api
+import apiClient from "@/apiClient";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function DisputeDetails() {
   const router = useRouter();
+  const { jobId } = router.query;
+  const [jobDetails, setJobDetails] = useState(null);
   const [additionalNotes, setAdditionalNotes] = useState("");
   const [loading, setLoading] = useState(false);
-  const { jobId } = router.query;
 
-  // Fetch job details if needed (optional)
-  const [jobDetails, setJobDetails] = useState(null);
-
+  // Fetch job details
   useEffect(() => {
     if (!jobId) return;
 
     const fetchJobDetails = async () => {
       try {
+        setLoading(true);
         const response = await apiClient.get(`/jobs/${jobId}`);
         setJobDetails(response.data.job); // Assuming backend returns job details
+        setLoading(false);
       } catch (error) {
-        toast.error("Failed to fetch job details.");
+        toast.error("Failed to fetch dispute details.");
+        setLoading(false);
       }
     };
 
@@ -39,7 +41,7 @@ export default function DisputeDetails() {
 
     try {
       // Send dispute report to the backend
-      const response = await apiClient.post("/send-dispute-report", {
+      await apiClient.post("/send-dispute-report", {
         phoneNumber: "+94741143323",
         jobTitle: jobDetails?.title,
         jobLocation: jobDetails?.location,
@@ -47,52 +49,34 @@ export default function DisputeDetails() {
         additionalNotes,
       });
 
-      // Handle success response
-      if (response.status === 200) {
-        toast.success("Dispute report sent successfully!");
-        router.push("/contractor-dashboard"); // Redirect back to the dashboard
-      } else {
-        toast.error("Failed to send dispute report.");
-      }
+      toast.success("Dispute report submitted successfully!");
+      router.push("/tradesman-dashboard"); // Redirect back to the dashboard
     } catch (error) {
-      toast.error("An error occurred while sending the dispute report.");
+      toast.error("Failed to submit dispute report.");
     } finally {
       setLoading(false);
     }
   };
 
+  if (loading) {
+    return <h1>Loading...</h1>;
+  }
+
   if (!jobDetails) {
-    return (
-      <div>
-        <h1>Loading...</h1>
-      </div>
-    );
+    return <h1>Dispute not found.</h1>;
   }
 
   return (
     <div style={{ padding: "2rem", maxWidth: "600px", margin: "0 auto" }}>
-      <h1>Dispute Report</h1>
-      <p>
-        <strong>Job Title:</strong> {jobDetails.title}
-      </p>
-      <p>
-        <strong>Location:</strong> {jobDetails.location}
-      </p>
-      <p>
-        <strong>Issue Date:</strong>{" "}
-        {new Date(jobDetails.created_at).toLocaleDateString()}
-      </p>
+      <h1>Dispute Details</h1>
+      <p><strong>Title:</strong> {jobDetails.title}</p>
+      <p><strong>Location:</strong> {jobDetails.location}</p>
+      <p><strong>Budget:</strong> ${jobDetails.budget}</p>
+      <p><strong>Issue Date:</strong> {new Date(jobDetails.created_at).toLocaleDateString()}</p>
 
       {/* Additional Notes Input */}
       <div style={{ marginBottom: "1rem" }}>
-        <label
-          htmlFor="additional-notes"
-          style={{
-            display: "block",
-            fontWeight: "bold",
-            marginBottom: "0.5rem",
-          }}
-        >
+        <label htmlFor="additional-notes" style={{ display: "block", fontWeight: "bold", marginBottom: "0.5rem" }}>
           Additional Notes
         </label>
         <textarea
