@@ -33,7 +33,11 @@ export default function TradesmanDashboard() {
     const fetchJobs = async () => {
       if (!user) return;
       try {
-        const response = await apiClient.get(`/tradesman/${user.user_id}/tasks`);
+        const response = await apiClient.get(
+          `/tradesman/${user.user_id}/tasks`
+        );
+        console.log(`Fetched data is ${JSON.stringify(response.data)}`);
+
         setJobs(response.data.tasks);
       } catch (error) {
         toast.error("Failed to fetch tasks.");
@@ -110,25 +114,36 @@ export default function TradesmanDashboard() {
       toast.success("Application submitted successfully.");
       router.reload(); // Refresh the page to reflect updated status
     } catch (error) {
-      toast.error(error.response?.data?.error || "Failed to apply for the job.");
+      toast.error(
+        error.response?.data?.error || "Failed to apply for the job."
+      );
     }
   };
 
-  // Kanban board rendering
+  // Kanban board rendering with updated categories
   const renderKanbanBoard = () => {
     const groupedJobs = {
-      assigned: jobs.filter((job) => job.status === "assigned"),
-      ongoing: jobs.filter((job) => job.status === "ongoing"),
-      dispute: jobs.filter((job) => job.status === "dispute"),
+      approved: jobs.filter((job) => job.status === "approved"),
+      closed: jobs.filter((job) => job.status === "closed"),
+      disputes: jobs.filter((job) => job.status === "disputes"),
       completed: jobs.filter((job) => job.status === "completed"),
     };
+
+    // Define display names for each category
+    const categoryDisplayNames = {
+      approved: "Approved Jobs",
+      closed: "Closed",
+      disputes: "Disputes",
+      completed: "Completed Jobs",
+    };
+
     return (
       <div style={{ display: "flex", gap: "2rem", marginTop: "1rem" }}>
-        {Object.keys(groupedJobs).map((status) => (
-          <div key={status} style={{ flex: 1, minWidth: "200px" }}>
-            <h3>{status.charAt(0).toUpperCase() + status.slice(1)}</h3>
+        {Object.keys(groupedJobs).map((state) => (
+          <div key={state} style={{ flex: 1, minWidth: "200px" }}>
+            <h3>{categoryDisplayNames[state]}</h3>
             <ul style={{ listStyle: "none", padding: 0 }}>
-              {groupedJobs[status].map((job) => (
+              {groupedJobs[state].map((job) => (
                 <li
                   key={job.id}
                   style={{
@@ -142,8 +157,8 @@ export default function TradesmanDashboard() {
                   <p>Category: {job.category}</p>
                   <p>Location: {job.location}</p>
                   <p>Budget: ${job.budget}</p>
-                  {/* Dispute Form */}
-                  {job.status === "ongoing" && (
+                  {/* Dispute Form - only show for approved jobs */}
+                  {job.state === "approved" && (
                     <form
                       onSubmit={(e) => {
                         e.preventDefault();
@@ -177,8 +192,8 @@ export default function TradesmanDashboard() {
                       </button>
                     </form>
                   )}
-                  {/* Resolve Dispute Form */}
-                  {job.status === "dispute" && (
+                  {/* Resolve Dispute Form - only show for disputes */}
+                  {job.state === "disputes" && (
                     <button
                       onClick={() => setSelectedDispute(job)} // Open dispute details
                       style={{
@@ -193,8 +208,40 @@ export default function TradesmanDashboard() {
                       View Dispute
                     </button>
                   )}
+                  {/* Mark as completed button - only for approved jobs */}
+                  {job.state === "approved" && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          await apiClient.post(`/jobs/${job.id}/complete`, {
+                            completed_by: user.user_id,
+                          });
+                          toast.success("Job marked as completed!");
+                          router.reload();
+                        } catch (error) {
+                          toast.error("Failed to mark job as completed.");
+                        }
+                      }}
+                      style={{
+                        padding: "0.5rem 1rem",
+                        background: "#28a745",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        marginTop: "0.5rem",
+                      }}
+                    >
+                      Mark as Completed
+                    </button>
+                  )}
                 </li>
               ))}
+              {groupedJobs[state].length === 0 && (
+                <li style={{ textAlign: "center", padding: "1rem" }}>
+                  No jobs in this category
+                </li>
+              )}
             </ul>
           </div>
         ))}
@@ -318,10 +365,18 @@ export default function TradesmanDashboard() {
           }}
         >
           <h2>Dispute Details</h2>
-          <p><strong>Title:</strong> {selectedDispute.title}</p>
-          <p><strong>Category:</strong> {selectedDispute.category}</p>
-          <p><strong>Location:</strong> {selectedDispute.location}</p>
-          <p><strong>Budget:</strong> ${selectedDispute.budget}</p>
+          <p>
+            <strong>Title:</strong> {selectedDispute.title}
+          </p>
+          <p>
+            <strong>Category:</strong> {selectedDispute.category}
+          </p>
+          <p>
+            <strong>Location:</strong> {selectedDispute.location}
+          </p>
+          <p>
+            <strong>Budget:</strong> ${selectedDispute.budget}
+          </p>
 
           {/* Form for submitting dispute details */}
           <form
@@ -336,11 +391,17 @@ export default function TradesmanDashboard() {
             }}
           >
             <label htmlFor="dispute-details">
-              {user.user_type === "contractor" ? "Resolution Details" : "Reason for Dispute"}
+              {user.user_type === "contractor"
+                ? "Resolution Details"
+                : "Reason for Dispute"}
             </label>
             <textarea
               id="dispute-details"
-              value={user.user_type === "contractor" ? resolutionDetails : disputeReason}
+              value={
+                user.user_type === "contractor"
+                  ? resolutionDetails
+                  : disputeReason
+              }
               onChange={(e) =>
                 user.user_type === "contractor"
                   ? setResolutionDetails(e.target.value)
