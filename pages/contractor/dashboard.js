@@ -14,6 +14,7 @@ export default function ContractorDashboard() {
   const [resolution, setResolution] = useState("");
   const [showResolutionModal, setShowResolutionModal] = useState(false);
 
+  // Fetch user data on component mount
   useEffect(() => {
     if (typeof window !== "undefined") {
       const userData = sessionStorage.getItem("user");
@@ -26,13 +27,13 @@ export default function ContractorDashboard() {
     }
   }, []);
 
+  // Fetch jobs assigned to the contractor
   useEffect(() => {
     const fetchJobs = async () => {
       if (user) {
         try {
           setLoading(true);
           const response = await apiClient.get(`/contractors/${user.user_id}/tasks`);
-          console.log("The response is", response.data);
           setJobs(response.data.tasks); // Updated to match backend structure
           setLoading(false);
         } catch (error) {
@@ -46,31 +47,37 @@ export default function ContractorDashboard() {
     }
   }, [user]);
 
+  // Create new job
   const handleCreateJob = () => {
     router.push("/contractor/add-job");
   };
 
+  // Edit job requirements
   const handleEditJob = (jobId) => {
     router.push(`/contractor-requirements?jobId=${jobId}`);
   };
 
+  // View job details
   const handleViewJob = (jobId) => {
     router.push(`/job-details/${jobId}`);
   };
 
+  // Open dispute resolution modal
   const handleViewDispute = (job) => {
     setSelectedDispute(job);
     setShowResolutionModal(true);
   };
 
+  // Close dispute resolution modal
   const handleCloseResolutionModal = () => {
     setShowResolutionModal(false);
     setSelectedDispute(null);
     setResolution("");
   };
 
+  // Submit resolution for a dispute
   const handleSubmitResolution = async () => {
-    if (resolution.trim() === "") {
+    if (!resolution.trim()) {
       toast.error("Please provide a resolution description.");
       return;
     }
@@ -91,6 +98,7 @@ export default function ContractorDashboard() {
     }
   };
 
+  // Group jobs by status
   const ongoingJobs = jobs.filter((job) => job.status === "ongoing");
   const disputeJobs = jobs.filter((job) => job.status === "dispute");
   const completedJobs = jobs.filter((job) => job.status === "completed");
@@ -172,32 +180,45 @@ export default function ContractorDashboard() {
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {ongoingJobs.map((job) => (
-                  <div key={job.id} style={{ 
-                    backgroundColor: "#fff", 
-                    borderRadius: "8px", 
-                    padding: "1rem", 
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-                  }}>
+                  <div
+                    key={job.id}
+                    style={{
+                      backgroundColor: "#fff",
+                      borderRadius: "8px",
+                      padding: "1rem",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                    }}
+                  >
                     <h3>{job.title}</h3>
                     <p>{job.location}</p>
                     <p><strong>Budget:</strong> ${job.budget}</p>
                     <p><strong>Deadline:</strong> {new Date(job.deadline).toLocaleDateString()}</p>
                     <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
-                      <button onClick={() => handleViewJob(job.id)} style={{
-                        padding: "0.5rem 1rem",
-                        borderRadius: "4px",
-                        border: "none",
-                        backgroundColor: "#007bff",
-                        color: "#fff",
-                        cursor: "pointer",
-                      }}>View Details</button>
-                      <button onClick={() => handleEditJob(job.id)} style={{
-                        padding: "0.5rem 1rem",
-                        borderRadius: "4px",
-                        border: "1px solid #ddd",
-                        backgroundColor: "#f8f9fa",
-                        cursor: "pointer",
-                      }}>Edit</button>
+                      <button
+                        onClick={() => handleViewJob(job.id)}
+                        style={{
+                          padding: "0.5rem 1rem",
+                          borderRadius: "4px",
+                          border: "none",
+                          backgroundColor: "#007bff",
+                          color: "#fff",
+                          cursor: "pointer",
+                        }}
+                      >
+                        View Details
+                      </button>
+                      <button
+                        onClick={() => handleEditJob(job.id)}
+                        style={{
+                          padding: "0.5rem 1rem",
+                          borderRadius: "4px",
+                          border: "1px solid #ddd",
+                          backgroundColor: "#f8f9fa",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Edit
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -207,52 +228,71 @@ export default function ContractorDashboard() {
 
           {/* Disputes Column */}
           <div style={{ minWidth: "350px", flex: 1 }}>
-            <div style={{ 
-              backgroundColor: "#fff8f0", 
-              borderRadius: "8px", 
-              padding: "1rem", 
-              marginBottom: "1rem",
-              borderTop: "5px solid #ff7b00" 
-            }}>
+            <div
+              style={{
+                backgroundColor: "#fff8f0",
+                borderRadius: "8px",
+                padding: "1rem",
+                marginBottom: "1rem",
+                borderTop: "5px solid #ff7b00",
+              }}
+            >
               <h2>Disputes</h2>
             </div>
             {disputeJobs.length === 0 ? (
-              <div style={{ 
-                backgroundColor: "#fff", 
-                borderRadius: "8px", 
-                padding: "1rem", 
-                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                textAlign: "center",
-                color: "#666"
-              }}>No disputes</div>
+              <div
+                style={{
+                  backgroundColor: "#fff",
+                  borderRadius: "8px",
+                  padding: "1rem",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                  textAlign: "center",
+                  color: "#666",
+                }}
+              >
+                No disputes
+              </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {disputeJobs.map((job) => (
-                  <div key={job.id} style={{ 
-                    backgroundColor: "#fff", 
-                    borderRadius: "8px", 
-                    padding: "1rem", 
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-                  }}>
+                  <div
+                    key={job.id}
+                    style={{
+                      backgroundColor: "#fff",
+                      borderRadius: "8px",
+                      padding: "1rem",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                    }}
+                  >
                     <h3>{job.title}</h3>
                     <p>{job.location}</p>
                     <p><strong>Issue Date:</strong> {new Date(job.created_at).toLocaleDateString()}</p>
                     <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
-                      <button onClick={() => handleViewDispute(job)} style={{
-                        padding: "0.5rem 1rem",
-                        borderRadius: "4px",
-                        border: "none",
-                        backgroundColor: "#ff7b00",
-                        color: "#fff",
-                        cursor: "pointer",
-                      }}>Resolve Dispute</button>
-                      <button onClick={() => handleViewJob(job.id)} style={{
-                        padding: "0.5rem 1rem",
-                        borderRadius: "4px",
-                        border: "1px solid #ddd",
-                        backgroundColor: "#f8f9fa",
-                        cursor: "pointer",
-                      }}>View Details</button>
+                      <button
+                        onClick={() => handleViewDispute(job)}
+                        style={{
+                          padding: "0.5rem 1rem",
+                          borderRadius: "4px",
+                          border: "none",
+                          backgroundColor: "#ff7b00",
+                          color: "#fff",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Resolve Dispute
+                      </button>
+                      <button
+                        onClick={() => handleViewJob(job.id)}
+                        style={{
+                          padding: "0.5rem 1rem",
+                          borderRadius: "4px",
+                          border: "1px solid #ddd",
+                          backgroundColor: "#f8f9fa",
+                          cursor: "pointer",
+                        }}
+                      >
+                        View Details
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -262,46 +302,60 @@ export default function ContractorDashboard() {
 
           {/* Completed Jobs Column */}
           <div style={{ minWidth: "350px", flex: 1 }}>
-            <div style={{ 
-              backgroundColor: "#f0fff4", 
-              borderRadius: "8px", 
-              padding: "1rem", 
-              marginBottom: "1rem",
-              borderTop: "5px solid #28a745" 
-            }}>
+            <div
+              style={{
+                backgroundColor: "#f0fff4",
+                borderRadius: "8px",
+                padding: "1rem",
+                marginBottom: "1rem",
+                borderTop: "5px solid #28a745",
+              }}
+            >
               <h2>Completed</h2>
             </div>
             {completedJobs.length === 0 ? (
-              <div style={{ 
-                backgroundColor: "#fff", 
-                borderRadius: "8px", 
-                padding: "1rem", 
-                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                textAlign: "center",
-                color: "#666"
-              }}>No completed jobs</div>
+              <div
+                style={{
+                  backgroundColor: "#fff",
+                  borderRadius: "8px",
+                  padding: "1rem",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                  textAlign: "center",
+                  color: "#666",
+                }}
+              >
+                No completed jobs
+              </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {completedJobs.map((job) => (
-                  <div key={job.id} style={{ 
-                    backgroundColor: "#fff", 
-                    borderRadius: "8px", 
-                    padding: "1rem", 
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-                  }}>
+                  <div
+                    key={job.id}
+                    style={{
+                      backgroundColor: "#fff",
+                      borderRadius: "8px",
+                      padding: "1rem",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                    }}
+                  >
                     <h3>{job.title}</h3>
                     <p>{job.location}</p>
                     <p><strong>Completed:</strong> {new Date(job.updated_at).toLocaleDateString()}</p>
                     <p><strong>Budget:</strong> ${job.budget}</p>
                     <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
-                      <button onClick={() => handleViewJob(job.id)} style={{
-                        padding: "0.5rem 1rem",
-                        borderRadius: "4px",
-                        border: "none",
-                        backgroundColor: "#28a745",
-                        color: "#fff",
-                        cursor: "pointer",
-                      }}>View Details</button>
+                      <button
+                        onClick={() => handleViewJob(job.id)}
+                        style={{
+                          padding: "0.5rem 1rem",
+                          borderRadius: "4px",
+                          border: "none",
+                          backgroundColor: "#28a745",
+                          color: "#fff",
+                          cursor: "pointer",
+                        }}
+                      >
+                        View Details
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -313,26 +367,30 @@ export default function ContractorDashboard() {
 
       {/* Resolution Modal */}
       {showResolutionModal && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "rgba(0, 0, 0, 0.5)",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          zIndex: 1000,
-        }}>
-          <div style={{
-            backgroundColor: "#fff",
-            borderRadius: "8px",
-            padding: "2rem",
-            maxWidth: "500px",
-            width: "100%",
-            boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-          }}>
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#fff",
+              borderRadius: "8px",
+              padding: "2rem",
+              maxWidth: "500px",
+              width: "100%",
+              boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+            }}
+          >
             <h2>Resolve Dispute</h2>
             <p><strong>Job:</strong> {selectedDispute?.title}</p>
             <p><strong>Location:</strong> {selectedDispute?.location}</p>
@@ -356,21 +414,31 @@ export default function ContractorDashboard() {
               />
             </div>
             <div style={{ display: "flex", gap: "1rem", justifyContent: "flex-end" }}>
-              <button onClick={handleCloseResolutionModal} style={{
-                padding: "0.75rem 1.5rem",
-                borderRadius: "4px",
-                border: "1px solid #ddd",
-                backgroundColor: "#f5f5f5",
-                cursor: "pointer",
-              }}>Cancel</button>
-              <button onClick={handleSubmitResolution} style={{
-                padding: "0.75rem 1.5rem",
-                borderRadius: "4px",
-                border: "none",
-                backgroundColor: "#007bff",
-                color: "#fff",
-                cursor: "pointer",
-              }}>Submit Resolution</button>
+              <button
+                onClick={handleCloseResolutionModal}
+                style={{
+                  padding: "0.75rem 1.5rem",
+                  borderRadius: "4px",
+                  border: "1px solid #ddd",
+                  backgroundColor: "#f5f5f5",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitResolution}
+                style={{
+                  padding: "0.75rem 1.5rem",
+                  borderRadius: "4px",
+                  border: "none",
+                  backgroundColor: "#007bff",
+                  color: "#fff",
+                  cursor: "pointer",
+                }}
+              >
+                Submit Resolution
+              </button>
             </div>
           </div>
         </div>
